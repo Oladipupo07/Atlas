@@ -7,7 +7,7 @@ import os
 import sys
 import shutil
 
-PORT = 2026
+PORT = 8000
 
 class AtlasApiHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -295,7 +295,7 @@ if __name__ == '__main__':
         allow_reuse_address = True
         
     with FastTCPServer(("", PORT), handler) as httpd:
-        print(f"ATLAS Host Server active.\nConnected at http://localhost:{PORT}.\nEnjoy!")
+        print(f"ATLAS Host Server active. Connected at http://localhost:{PORT}")
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

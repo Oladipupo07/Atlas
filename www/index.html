@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS - AI Assistant & Smart Device Controller</title>
+  <meta name="description" content="ATLAS: Your intelligent AI assistant for answering questions and controlling smart devices. Chat interface with real-time device management.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <!-- Ambient background effects -->
+  <div class="bg-gradient-orb orb-1"></div>
+  <div class="bg-gradient-orb orb-2"></div>
+  <div class="bg-gradient-orb orb-3"></div>
+  <div class="bg-noise"></div>
+
+  <!-- Alert Overlay -->
+  <div id="alert-overlay" class="alert-overlay hidden">
+    <div class="alert-box">
+      <div class="alert-glitch-icon">⚠️</div>
+      <div class="alert-title">SYSTEM ALERT</div>
+      <div id="alert-message" class="alert-msg">An issue requires your attention.</div>
+      <button onclick="dismissAlert()" class="btn btn-warning">DISMISS</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="app-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+          </svg>
+        </div>
+        <div class="app-title-group">
+          <h1>ATLAS</h1>
+          <span class="app-subtitle">AI ASSISTANT & DEVICE CONTROLLER</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="status-pill">
+          <span class="status-dot pulsing-green"></span>
+          <span class="status-text" id="system-protocol-display">ONLINE</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">CPU</span>
+          <span class="metric-val" id="cpu-percent">24%</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">RAM</span>
+          <span class="metric-val" id="mem-percent">48%</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">DISK</span>
+          <span class="metric-val" id="net-percent">12%</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="hud-clock" id="hud-clock">00:00:00</div>
+        <div class="hud-date" id="hud-date">17.JUN.2026</div>
+      </div>
+    </header>
+
+    <!-- MAIN GRID LAYOUT -->
+    <main class="main-grid">
+
+      <!-- COLUMN 1: CHAT / Q&A -->
+      <section class="grid-col col-chat">
+
+        <!-- CARD: AI CHAT -->
+        <div class="card card-chat" id="card-chat">
+          <div class="card-header">
+            <h2>💬 ATLAS CHAT</h2>
+            <button class="btn-icon" onclick="clearChatHistory()" title="Clear chat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <div class="card-body chat-body" id="chat-history">
+            <div class="chat-msg atlas-msg">
+              <div class="msg-avatar">A</div>
+              <div class="msg-bubble">
+                <div class="msg-name">Atlas</div>
+                <div class="msg-text">Hello! I'm Atlas, your AI assistant. Ask me anything or use commands to control your devices. Type <code>/help</code> for a list of commands.</div>
+                <div class="msg-time" id="greeting-time">--:--</div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ask Atlas anything..." autocomplete="off">
+            <button class="btn-send" id="btn-send" onclick="sendChatMessage()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <button class="btn-mic" id="btn-mic" onclick="toggleVoiceCommand()" title="Voice input">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLUMN 2: AI BRAIN VISUALIZER & VOICE -->
+      <section class="grid-col col-center">
+
+        <!-- CARD: ATLAS AI CORE -->
+        <div class="card card-core" id="card-atlas-core">
+          <div class="card-header">
+            <h2>🧠 ATLAS AI CORE</h2>
+            <div class="card-dots"></div>
+          </div>
+          <div class="card-body core-body">
+            <!-- Pulsing AI brain visualization -->
+            <div class="brain-container">
+              <div class="brain-outer-ring">
+                <div class="brain-middle-ring">
+                  <div class="brain-inner-ring">
+                    <div class="brain-core" id="atlas-core-node" onclick="triggerCorePulse()">
+                      <div class="brain-symbol">A</div>
+                    </div>
+                  </div>
+                  <div class="orbit-dot orbit-1"></div>
+                  <div class="orbit-dot orbit-2"></div>
+                  <div class="orbit-dot orbit-3"></div>
+                  <div class="orbit-dot orbit-4"></div>
+                  <div class="orbit-dot orbit-5"></div>
+                  <div class="orbit-dot orbit-6"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="core-stats-row">
+              <div class="core-stat">
+                <span class="label">UPTIME</span>
+                <span class="value" id="uptime-display">00:04:12</span>
+              </div>
+              <div class="core-stat">
+                <span class="label">LATENCY</span>
+                <span class="value">0.02ms</span>
+              </div>
+              <div class="core-stat">
+                <span class="label">STATUS</span>
+                <span class="value text-green">ACTIVE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD: VOICE INTERFACE -->
+        <div class="card card-voice" id="card-voice-assistant">
+          <div class="card-header">
+            <h2>🎙️ VOICE INTERFACE</h2>
+            <div class="card-dots"></div>
+          </div>
+          <div class="card-body voice-body">
+            <div class="visualizer-container">
+              <canvas id="voice-visualizer"></canvas>
+              <div class="listening-status" id="mic-status-bubble">
+                <div class="status-indicator-light"></div>
+                <span id="mic-status-text">STANDBY</span>
+              </div>
+            </div>
+            <div class="voice-caption-area">
+              <div class="speaker-label">ATLAS RESPONSE:</div>
+              <div class="caption-text" id="voice-caption-output">"Click the microphone or type a message to begin."</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- COLUMN 3: DEVICE CONTROLS -->
+      <section class="grid-col col-devices">
+
+        <!-- CARD: SMART DEVICE MATRIX -->
+        <div class="card card-devices" id="card-devices">
+          <div class="card-header">
+            <h2>🏠 SMART DEVICES</h2>
+            <div class="card-dots"></div>
+          </div>
+          <div class="card-body devices-body">
+            <div class="device-grid">
+              <!-- Living Room Light -->
+              <div class="device-tile" id="device-living-light">
+                <div class="device-icon">💡</div>
+                <div class="device-name">Living Room</div>
+                <div class="device-type">Smart Light</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('living-light', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Bedroom Light -->
+              <div class="device-tile" id="device-bedroom-light">
+                <div class="device-icon">💡</div>
+                <div class="device-name">Bedroom</div>
+                <div class="device-type">Smart Light</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" onchange="toggleDevice('bedroom-light', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Thermostat -->
+              <div class="device-tile" id="device-thermostat">
+                <div class="device-icon">🌡️</div>
+                <div class="device-name">Thermostat</div>
+                <div class="device-type"><span id="thermostat-val">72</span>°F</div>
+                <input type="range" class="device-slider" min="60" max="85" value="72" oninput="setThermostat(this.value)">
+              </div>
+              <!-- Smart Lock -->
+              <div class="device-tile" id="device-lock">
+                <div class="device-icon">🔒</div>
+                <div class="device-name">Front Door</div>
+                <div class="device-type">Smart Lock</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('lock', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Smart Speaker -->
+              <div class="device-tile" id="device-speaker">
+                <div class="device-icon">🔊</div>
+                <div class="device-name">Speaker</div>
+                <div class="device-type">Vol: <span id="speaker-vol">50</span>%</div>
+                <input type="range" class="device-slider" min="0" max="100" value="50" oninput="setSpeakerVolume(this.value)">
+              </div>
+              <!-- Security Camera -->
+              <div class="device-tile" id="device-camera">
+                <div class="device-icon">📹</div>
+                <div class="device-name">Security Cam</div>
+                <div class="device-type">Camera</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('camera', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD: HOST SYSTEM CONTROL -->
+        <div class="card card-system" id="card-host-control">
+          <div class="card-header">
+            <h2>🖥️ SYSTEM CONTROL</h2>
+            <div class="card-dots"></div>
+          </div>
+          <div class="card-body system-body">
+            <div class="system-status-row">
+              <span>Server Link:</span>
+              <span id="host-link-status" class="status-badge status-online">ONLINE</span>
+            </div>
+
+            <div class="system-status-row" style="margin-top: 6px;">
+              <span>Host IP:</span>
+              <input type="text" id="host-ip-address" placeholder="localhost:2026" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-default); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.58rem; padding: 2px 6px; width: 120px; font-family: 'Share Tech Mono', monospace; text-align: right;" onchange="saveHostIP(this.value)">
+            </div>
+
+            <div class="system-grid">
+              <button class="system-btn" onclick="triggerHostAction('open:notepad')">
+                <span class="sys-icon">📝</span>
+                <span>Notepad</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('open:calc')">
+                <span class="sys-icon">🧮</span>
+                <span>Calculator</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('open:browser')">
+                <span class="sys-icon">🌐</span>
+                <span>Browser</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:volup')">
+                <span class="sys-icon">🔊</span>
+                <span>Vol Up</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:voldown')">
+                <span class="sys-icon">🔉</span>
+                <span>Vol Down</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:mute')">
+                <span class="sys-icon">🔇</span>
+                <span>Mute</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('sys:screenshot')">
+                <span class="sys-icon">📸</span>
+                <span>Screenshot</span>
+              </button>
+              <button class="system-btn sys-btn-danger" onclick="triggerHostAction('sys:lock')">
+                <span class="sys-icon">🔐</span>
+                <span>Lock PC</span>
+              </button>
+            </div>
+
+            <!-- Native Mobile Controls (Capacitor only) -->
+            <div id="mobile-controls-panel" class="mobile-section hidden">
+              <div class="system-status-row" style="margin-top: 8px;">
+                <span>Mobile:</span>
+                <span class="status-badge status-online">ACTIVE</span>
+              </div>
+              <div class="system-grid">
+                <button class="system-btn" onclick="triggerMobileAction('haptic')">
+                  <span class="sys-icon">📳</span>
+                  <span>Vibrate</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('torch')">
+                  <span class="sys-icon">🔦</span>
+                  <span>Torch</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('toast')">
+                  <span class="sys-icon">💬</span>
+                  <span>Toast</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('specs')">
+                  <span class="sys-icon">📱</span>
+                  <span>Specs</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="screenshot-display-area" class="screenshot-area hidden" onclick="toggleScreenshotZoom()">
+              <div class="screenshot-header">SCREENSHOT CAPTURED:</div>
+              <img id="screenshot-thumbnail" src="" alt="Screenshot">
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD: ACTIVITY LOG -->
+        <div class="card card-logs" id="card-logs">
+          <div class="card-header">
+            <h2>📋 ACTIVITY LOG</h2>
+            <button class="btn-icon" onclick="clearSecureLogs()" title="Clear logs">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <div class="card-body logs-body">
+            <div class="log-entries" id="secure-log-entries">
+              <div class="log-entry sys-msg">
+                <span class="timestamp">[--:--:--]</span>
+                <span class="msg">Atlas AI system initialized.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
