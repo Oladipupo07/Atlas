@@ -131,6 +131,7 @@ const state = {
   net: 12,
   isListening: false,
   isSpeaking: false,
+  alwaysListening: false,
   weatherQuery: 'Malibu, CA',
   hostIP: localStorage.getItem('atlas_host_ip') || 'localhost:2026',
   devices: {
@@ -174,12 +175,22 @@ if (SpeechRecognition) {
     console.error('Speech recognition error', event);
     writeLogEntry(`Voice receptor error: ${event.error}`, 'err-msg');
     state.isListening = false;
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      state.alwaysListening = false;
+    }
     updateMicUI();
   };
 
   recognition.onend = () => {
     state.isListening = false;
     updateMicUI();
+    if (state.alwaysListening && !state.isSpeaking && recognition) {
+      try {
+        recognition.start();
+      } catch (e) {
+        console.error('Failed to restart recognition:', e);
+      }
+    }
   };
 } else {
   console.warn('Speech Recognition API not supported in this browser.');
@@ -209,16 +220,33 @@ function speakAsAtlas(text) {
     synthesisUtterance.onstart = () => {
       state.isSpeaking = true;
       updateMicUI();
+      if (recognition) {
+        recognition.stop();
+      }
     };
 
     synthesisUtterance.onend = () => {
       state.isSpeaking = false;
       updateMicUI();
+      if (state.alwaysListening && recognition) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error('Failed to restart recognition:', e);
+        }
+      }
     };
 
     synthesisUtterance.onerror = () => {
       state.isSpeaking = false;
       updateMicUI();
+      if (state.alwaysListening && recognition) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.error('Failed to restart recognition:', e);
+        }
+      }
     };
 
     window.speechSynthesis.speak(synthesisUtterance);
@@ -421,20 +449,42 @@ function clearChatHistory() {
 // 6. COMMAND TELEMETRY PROCESSING (Q&A & Direct Directives)
 // ----------------------------------------------------
 function processInputDirective(input) {
-  const clean = input.trim().toLowerCase();
+  let clean = input.trim().toLowerCase();
+  
+  // Strip wake words at the beginning
+  const wakeWords = ['hey atlas', 'ok atlas', 'hello atlas', 'atlas'];
+  for (const word of wakeWords) {
+    if (clean.startsWith(word + ' ')) {
+      clean = clean.substring(word.length + 1).trim();
+      break;
+    } else if (clean === word) {
+      clean = 'atlas';
+      break;
+    }
+  }
+
+  // If the user just called the AI by name
+  if (clean === 'atlas') {
+    speakAsAtlas("Yes? I am online and listening.");
+    return;
+  }
+
   const d = new Date();
   const pad = (v) => String(v).padStart(2, '0');
   const clockText = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
   const dateText = `${pad(d.getDate())}.${months[d.getMonth()]}.${d.getFullYear()}`;
 
-  if (clean.startsWith('/') || clean.startsWith('atlas')) {
-    // Normalize command prefix
+  // Route commands to Command Telemetry (starts with '/' or starts with a known command name)
+  const knownCommands = ['/help', 'help', '/status', 'status', '/devices', 'devices', '/toggle', 'toggle', '/thermostat', 'thermostat', '/volume', 'volume', '/diagnose', 'diagnose', '/weather', 'weather', '/notepad', 'notepad', '/calc', 'calc', '/calculator', 'calculator', '/screenshot', 'screenshot', '/lock', 'lock', '/torch', 'torch', '/flashlight', 'flashlight', '/vibrate', 'vibrate', '/haptic', 'haptic', '/toast', 'toast', '/specs', 'specs', '/device', 'device', '/clear', 'clear'];
+  const firstWord = clean.split(' ')[0];
+  const isCommand = clean.startsWith('/') || knownCommands.includes(firstWord);
+
+  if (isCommand) {
+    // Normalize command prefix to start with '/'
     let cmd = clean;
-    if (clean.startsWith('atlas ')) {
-      cmd = '/' + clean.replace('atlas ', '');
-    } else if (!clean.startsWith('/')) {
-      cmd = '/' + clean;
+    if (!cmd.startsWith('/')) {
+      cmd = '/' + cmd;
     }
 
     const args = cmd.split(' ');
@@ -806,10 +856,12 @@ function clearSecureLogs() {
 
 function toggleVoiceCommand() {
   if (state.isListening) {
+    state.alwaysListening = false;
     if (recognition) recognition.stop();
   } else {
     initAudioContext();
     if (recognition) {
+      state.alwaysListening = true;
       recognition.start();
     } else {
       speakAsAtlas("Voice speech recognition is not supported in this browser. Please type instructions in the chat box.");
