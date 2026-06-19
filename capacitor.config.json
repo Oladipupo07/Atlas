@@ -1,0 +1,6 @@
+{
+  "appId": "com.ironman.atlas",
+  "appName": "ATLAS HUD",
+  "webDir": ".",
+  "bundledWebRuntime": false
+}
