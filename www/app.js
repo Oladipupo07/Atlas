@@ -190,14 +190,21 @@ function speakAsAtlas(text) {
     window.speechSynthesis.cancel();
     synthesisUtterance = new SpeechSynthesisUtterance(text);
     const voices = window.speechSynthesis.getVoices();
-    let voice = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
+    const femaleKeywords = ['female', 'zira', 'samantha', 'karen', 'victoria', 'hazel', 'moira', 'tessa', 'siri', 'google uk english female', 'google us english'];
+    let voice = voices.find(v => {
+      const name = v.name.toLowerCase();
+      return v.lang.startsWith('en') && femaleKeywords.some(kw => name.includes(kw));
+    });
+    if (!voice) {
+      voice = voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('male'));
+    }
     if (!voice) {
       voice = voices.find(v => v.lang.startsWith('en'));
     }
     if (voice) synthesisUtterance.voice = voice;
 
-    synthesisUtterance.rate = 1.05;
-    synthesisUtterance.pitch = 0.95;
+    synthesisUtterance.rate = 0.9;  // Slower rate for a calm and gentle tone
+    synthesisUtterance.pitch = 1.05; // Slightly higher pitch for a soft and gentle feminine voice
 
     synthesisUtterance.onstart = () => {
       state.isSpeaking = true;
