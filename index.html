@@ -3,408 +3,352 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ATLAS - Advanced AI HUD & Holographic System</title>
-  <meta name="description" content="ATLAS: High-tech holographic dashboard and tactical AI system inspired by JARVIS. Real-time diagnostics, voice interface, and defense matrix control.">
+  <title>ATLAS - AI Assistant & Smart Device Controller</title>
+  <meta name="description" content="ATLAS: Your intelligent AI assistant for answering questions and controlling smart devices. Chat interface with real-time device management.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
-  <!-- High-tech HUD grid background scanlines overlay -->
-  <div class="hud-scanlines"></div>
-  <div class="hud-grid-overlay"></div>
-  
-  <!-- Alert Overlay for Emergency Protocols -->
+  <!-- Ambient background effects -->
+  <div class="bg-gradient-orb orb-1"></div>
+  <div class="bg-gradient-orb orb-2"></div>
+  <div class="bg-gradient-orb orb-3"></div>
+  <div class="bg-noise"></div>
+
+  <!-- Alert Overlay -->
   <div id="alert-overlay" class="alert-overlay hidden">
     <div class="alert-box">
       <div class="alert-glitch-icon">⚠️</div>
       <div class="alert-title">SYSTEM ALERT</div>
-      <div id="alert-message" class="alert-msg">CORE TEMPERATURE EXCEEDS CRITICAL THRESHOLD</div>
-      <button onclick="dismissAlert()" class="btn btn-warning">ACKNOWLEDGE ALERT</button>
+      <div id="alert-message" class="alert-msg">An issue requires your attention.</div>
+      <button onclick="dismissAlert()" class="btn btn-warning">DISMISS</button>
     </div>
   </div>
 
-  <div class="hud-container">
+  <div class="app-container">
     <!-- HEADER -->
-    <header class="hud-header">
+    <header class="app-header">
       <div class="header-left">
-        <div class="hud-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 2 7 12 12 22 7 12 2" />
-            <polyline points="2 17 12 22 22 17" />
-            <polyline points="2 12 12 17 22 12" />
+        <div class="app-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
           </svg>
         </div>
-        <div class="hud-title-group">
-          <h1>ATLAS v4.0.9</h1>
-          <span class="hud-subtitle">TACTICAL COMMAND & INTEGRATED INTELLIGENCE SYSTEM</span>
+        <div class="app-title-group">
+          <h1>ATLAS</h1>
+          <span class="app-subtitle">AI ASSISTANT & DEVICE CONTROLLER</span>
         </div>
       </div>
       <div class="header-center">
-        <div class="status-indicator">
+        <div class="status-pill">
           <span class="status-dot pulsing-green"></span>
-          <span class="status-text" id="system-protocol-display">PROTOCOL: STANDBY</span>
+          <span class="status-text" id="system-protocol-display">ONLINE</span>
         </div>
-        <div class="system-metric-pill">
-          <span class="metric-label">CORE TEMP:</span>
-          <span class="metric-val" id="core-temp-display">42°C</span>
+        <div class="metric-pill">
+          <span class="metric-label">CPU</span>
+          <span class="metric-val" id="cpu-percent">24%</span>
         </div>
-        <div class="system-metric-pill">
-          <span class="metric-label">ENERGY SOURCE:</span>
-          <span class="metric-val" id="energy-source-display">ARC REACTOR - 100%</span>
+        <div class="metric-pill">
+          <span class="metric-label">RAM</span>
+          <span class="metric-val" id="mem-percent">48%</span>
+        </div>
+        <div class="metric-pill">
+          <span class="metric-label">DISK</span>
+          <span class="metric-val" id="net-percent">12%</span>
         </div>
       </div>
       <div class="header-right">
-        <div class="hud-clock" id="hud-clock">00:00:00 UTC</div>
-        <div class="hud-date" id="hud-date">16.JUN.2026</div>
+        <div class="hud-clock" id="hud-clock">00:00:00</div>
+        <div class="hud-date" id="hud-date">17.JUN.2026</div>
       </div>
     </header>
 
     <!-- MAIN GRID LAYOUT -->
-    <main class="hud-grid">
-      
-      <!-- COLUMN 1: DIAGNOSTICS & SYSTEM CONFIGURATION -->
-      <section class="hud-col col-left">
-        
-        <!-- CARD: SYSTEM DIAGNOSTICS -->
-        <div class="hud-card" id="card-diagnostics">
-          <div class="card-header">
-            <h2>SYSTEM DIAGNOSTICS</h2>
-            <div class="card-dots"></div>
-          </div>
-          <div class="card-body">
-            <div class="diagnostic-bars">
-              <div class="bar-group">
-                <div class="bar-info">
-                  <span>CENTRAL COMPUTATION (CPU)</span>
-                  <span id="cpu-percent">24%</span>
-                </div>
-                <div class="bar-outer">
-                  <div class="bar-inner bar-cyan" id="cpu-bar" style="width: 24%;"></div>
-                </div>
-              </div>
-              <div class="bar-group">
-                <div class="bar-info">
-                  <span>SYNAPTIC CORE MEMORY</span>
-                  <span id="mem-percent">48%</span>
-                </div>
-                <div class="bar-outer">
-                  <div class="bar-inner bar-orange" id="mem-bar" style="width: 48%;"></div>
-                </div>
-              </div>
-              <div class="bar-group">
-                <div class="bar-info">
-                  <span>DEFENSE BANDWIDTH (NET)</span>
-                  <span id="net-percent">12%</span>
-                </div>
-                <div class="bar-outer">
-                  <div class="bar-inner bar-blue" id="net-bar" style="width: 12%;"></div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="sub-diagnostics-grid">
-              <div class="diagnostic-stat">
-                <span class="label">UPTIME</span>
-                <span class="value" id="uptime-display">00:04:12</span>
-              </div>
-              <div class="diagnostic-stat">
-                <span class="label">COGNITIVE LATENCY</span>
-                <span class="value">0.02ms</span>
-              </div>
-              <div class="diagnostic-stat">
-                <span class="label">SYS INTEGRITY</span>
-                <span class="value text-cyan">99.8%</span>
-              </div>
-              <div class="diagnostic-stat">
-                <span class="label">FIREWALL LOCKS</span>
-                <span class="value text-warning">ACTIVE</span>
-              </div>
-            </div>
+    <main class="main-grid">
 
-            <!-- Interactive Modules Toggle list -->
-            <div class="module-toggles">
-              <h3>MODULE REGISTRY</h3>
-              <div class="toggle-row">
-                <span>WEAPONS CONTROL</span>
-                <button class="status-btn active" id="btn-weapons" onclick="toggleSystemModule('weapons')">ONLINE</button>
-              </div>
-              <div class="toggle-row">
-                <span>NAVIGATION ARRAY</span>
-                <button class="status-btn active" id="btn-navigation" onclick="toggleSystemModule('navigation')">ONLINE</button>
-              </div>
-              <div class="toggle-row">
-                <span>ENVIRONMENT SUBSYSTEMS</span>
-                <button class="status-btn active" id="btn-environment" onclick="toggleSystemModule('environment')">ONLINE</button>
-              </div>
-              <div class="toggle-row">
-                <span>TACTICAL HOLOGRAPHY</span>
-                <button class="status-btn active" id="btn-holography" onclick="toggleSystemModule('holography')">ONLINE</button>
+      <!-- COLUMN 1: CHAT / Q&A -->
+      <section class="grid-col col-chat">
+
+        <!-- CARD: AI CHAT -->
+        <div class="card card-chat" id="card-chat">
+          <div class="card-header">
+            <h2>💬 ATLAS CHAT</h2>
+            <button class="btn-icon" onclick="clearChatHistory()" title="Clear chat">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>
+          <div class="card-body chat-body" id="chat-history">
+            <div class="chat-msg atlas-msg">
+              <div class="msg-avatar">A</div>
+              <div class="msg-bubble">
+                <div class="msg-name">Atlas</div>
+                <div class="msg-text">Hello! I'm Atlas, your AI assistant. Ask me anything or use commands to control your devices. Type <code>/help</code> for a list of commands.</div>
+                <div class="msg-time" id="greeting-time">--:--</div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- CARD: ARMOR SUITE MATRIX -->
-        <div class="hud-card" id="card-armor">
-          <div class="card-header">
-            <h2>ARMOR SCHEMATIC - MARK LXXXV</h2>
-            <div class="card-dots"></div>
-          </div>
-          <div class="card-body armor-body">
-            <div class="armor-visualizer-container">
-              <!-- Holographic SVG schematic representation of suit -->
-              <svg class="armor-svg" viewBox="0 0 200 280">
-                <!-- Head -->
-                <circle id="suit-head" class="armor-part part-active" cx="100" cy="40" r="18" onclick="selectArmorPart('helmet')" />
-                <!-- Chest / Arc Reactor -->
-                <path id="suit-chest" class="armor-part part-active" d="M85 62 L115 62 L120 110 L80 110 Z" onclick="selectArmorPart('chest')" />
-                <!-- Left Shoulder & Arm -->
-                <path id="suit-left-arm" class="armor-part part-active" d="M75 66 L60 85 L50 140 L60 145 L70 95 L75 80 Z" onclick="selectArmorPart('left-arm')" />
-                <!-- Right Shoulder & Arm -->
-                <path id="suit-right-arm" class="armor-part part-active" d="M125 66 L140 85 L150 140 L140 145 L130 95 L125 80 Z" onclick="selectArmorPart('right-arm')" />
-                <!-- Left Leg -->
-                <path id="suit-left-leg" class="armor-part part-active" d="M82 145 L72 200 L65 260 L78 262 L88 205 L92 145 Z" onclick="selectArmorPart('left-leg')" />
-                <!-- Right Leg -->
-                <path id="suit-right-leg" class="armor-part part-active" d="M118 145 L128 200 L135 260 L122 262 L112 205 L108 145 Z" onclick="selectArmorPart('right-leg')" />
-                
-                <!-- Inner Arc Reactor Core Symbol -->
-                <polygon id="suit-arc-core" class="arc-core-glyph" points="100,74 92,86 108,86" />
-                <circle cx="100" cy="82" r="8" stroke="cyan" stroke-width="1" fill="none" />
+          <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Ask Atlas anything..." autocomplete="off">
+            <button class="btn-send" id="btn-send" onclick="sendChatMessage()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+            <button class="btn-mic" id="btn-mic" onclick="toggleVoiceCommand()" title="Voice input">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
               </svg>
-            </div>
-            
-            <div class="armor-details" id="armor-details-panel">
-              <h3 id="armor-part-title">SYSTEM SUITE</h3>
-              <div class="armor-stat-row">
-                <span>PLATING INTEGRITY:</span>
-                <span id="armor-plating-val" class="value text-cyan">100%</span>
-              </div>
-              <div class="armor-stat-row">
-                <span>THERMAL REGULATION:</span>
-                <span id="armor-thermal-val" class="value text-cyan">OPTIMAL</span>
-              </div>
-              <div class="armor-stat-row">
-                <span>WEAPONS LOADOUT:</span>
-                <span id="armor-weapons-val" class="value text-cyan">READY</span>
-              </div>
-              <div class="armor-action-container">
-                <button class="btn btn-outline btn-small" onclick="diagnoseArmor()">DIAGNOSTIC CYCLE</button>
-                <button class="btn btn-outline btn-small text-danger" onclick="toggleArmorPart()">DEACTIVATE PART</button>
-              </div>
-            </div>
+            </button>
           </div>
         </div>
 
       </section>
 
-      <!-- COLUMN 2: PRIMARY HUD & AI CORE VOICE COMMANDS -->
-      <section class="hud-col col-center">
-        
-        <!-- CARD: ATLAS CORE REACTOR -->
-        <div class="hud-card" id="card-atlas-core">
+      <!-- COLUMN 2: AI BRAIN VISUALIZER & VOICE -->
+      <section class="grid-col col-center">
+
+        <!-- CARD: ATLAS AI CORE -->
+        <div class="card card-core" id="card-atlas-core">
           <div class="card-header">
-            <h2>ATLAS CORE ARC REACTOR</h2>
+            <h2>🧠 ATLAS AI CORE</h2>
             <div class="card-dots"></div>
           </div>
           <div class="card-body core-body">
-            <!-- Pulsing reactor visualization -->
-            <div class="reactor-container">
-              <div class="reactor-outer-ring">
-                <div class="reactor-middle-ring">
-                  <div class="reactor-inner-ring">
-                    <div class="reactor-core" id="atlas-core-node" onclick="triggerCorePulse()">
-                      <div class="reactor-symbol">A</div>
+            <!-- Pulsing AI brain visualization -->
+            <div class="brain-container">
+              <div class="brain-outer-ring">
+                <div class="brain-middle-ring">
+                  <div class="brain-inner-ring">
+                    <div class="brain-core" id="atlas-core-node" onclick="triggerCorePulse()">
+                      <div class="brain-symbol">A</div>
                     </div>
                   </div>
-                  <!-- Arc segments -->
-                  <div class="arc-segment arc-1"></div>
-                  <div class="arc-segment arc-2"></div>
-                  <div class="arc-segment arc-3"></div>
-                  <div class="arc-segment arc-4"></div>
-                  <div class="arc-segment arc-5"></div>
-                  <div class="arc-segment arc-6"></div>
+                  <div class="orbit-dot orbit-1"></div>
+                  <div class="orbit-dot orbit-2"></div>
+                  <div class="orbit-dot orbit-3"></div>
+                  <div class="orbit-dot orbit-4"></div>
+                  <div class="orbit-dot orbit-5"></div>
+                  <div class="orbit-dot orbit-6"></div>
                 </div>
               </div>
             </div>
 
-            <div class="core-controls">
-              <div class="core-mode-title">REACTOR OUTLET MODULATION</div>
-              <div class="core-btns">
-                <button class="btn core-btn btn-cyan active" onclick="setCoreProtocol('safe', this)">STABLE</button>
-                <button class="btn core-btn btn-orange" onclick="setCoreProtocol('overdrive', this)">OVERDRIVE</button>
-                <button class="btn core-btn btn-danger" onclick="setCoreProtocol('critical', this)">CRITICAL</button>
+            <div class="core-stats-row">
+              <div class="core-stat">
+                <span class="label">UPTIME</span>
+                <span class="value" id="uptime-display">00:04:12</span>
+              </div>
+              <div class="core-stat">
+                <span class="label">LATENCY</span>
+                <span class="value">0.02ms</span>
+              </div>
+              <div class="core-stat">
+                <span class="label">STATUS</span>
+                <span class="value text-green">ACTIVE</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- CARD: INTEGRATED VOICE & SONAR ASSISTANT -->
-        <div class="hud-card" id="card-voice-assistant">
+        <!-- CARD: VOICE INTERFACE -->
+        <div class="card card-voice" id="card-voice-assistant">
           <div class="card-header">
-            <h2>ATLAS NEURAL SYNAPSE INTERFACE</h2>
+            <h2>🎙️ VOICE INTERFACE</h2>
             <div class="card-dots"></div>
           </div>
           <div class="card-body voice-body">
             <div class="visualizer-container">
               <canvas id="voice-visualizer"></canvas>
-              <!-- Glowing floating status indicator -->
               <div class="listening-status" id="mic-status-bubble">
                 <div class="status-indicator-light"></div>
-                <span id="mic-status-text">ATLAS COMPILER OFFLINE</span>
+                <span id="mic-status-text">STANDBY</span>
               </div>
             </div>
-            
-            <div class="voice-controls">
-              <button class="mic-btn" id="btn-mic" onclick="toggleVoiceCommand()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
-                </svg>
-              </button>
-              <div class="voice-caption">
-                <div class="speaker-label">ATLAS DETECTED DIALOGUE:</div>
-                <div class="caption-text" id="voice-caption-output">"Awaiting speech matrix initialization. Click the microphone indicator to bind synapses or use CLI console below."</div>
-              </div>
+            <div class="voice-caption-area">
+              <div class="speaker-label">ATLAS RESPONSE:</div>
+              <div class="caption-text" id="voice-caption-output">"Click the microphone or type a message to begin."</div>
             </div>
           </div>
         </div>
 
       </section>
 
-      <!-- COLUMN 3: GLOBAL RADAR MATRIX & ENVIRONMENTAL ANALYSIS -->
-      <section class="hud-col col-right">
-        
-        <!-- CARD: GLOBAL NAVIGATION RADAR -->
-        <div class="hud-card" id="card-radar">
+      <!-- COLUMN 3: DEVICE CONTROLS -->
+      <section class="grid-col col-devices">
+
+        <!-- CARD: SMART DEVICE MATRIX -->
+        <div class="card card-devices" id="card-devices">
           <div class="card-header">
-            <h2>ORBITAL SCANNERS & NAVIGATION GRID</h2>
+            <h2>🏠 SMART DEVICES</h2>
             <div class="card-dots"></div>
           </div>
-          <div class="card-body radar-body">
-            <canvas id="radar-canvas" width="280" height="200"></canvas>
-            <div class="radar-coordinates">
-              <div>LATITUDE: <span id="radar-lat">34.0522 N</span></div>
-              <div>LONGITUDE: <span id="radar-lon">118.2437 W</span></div>
-              <div>SECTOR: <span id="radar-sector">ALPHA-7</span></div>
+          <div class="card-body devices-body">
+            <div class="device-grid">
+              <!-- Living Room Light -->
+              <div class="device-tile" id="device-living-light">
+                <div class="device-icon">💡</div>
+                <div class="device-name">Living Room</div>
+                <div class="device-type">Smart Light</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('living-light', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Bedroom Light -->
+              <div class="device-tile" id="device-bedroom-light">
+                <div class="device-icon">💡</div>
+                <div class="device-name">Bedroom</div>
+                <div class="device-type">Smart Light</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" onchange="toggleDevice('bedroom-light', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Thermostat -->
+              <div class="device-tile" id="device-thermostat">
+                <div class="device-icon">🌡️</div>
+                <div class="device-name">Thermostat</div>
+                <div class="device-type"><span id="thermostat-val">72</span>°F</div>
+                <input type="range" class="device-slider" min="60" max="85" value="72" oninput="setThermostat(this.value)">
+              </div>
+              <!-- Smart Lock -->
+              <div class="device-tile" id="device-lock">
+                <div class="device-icon">🔒</div>
+                <div class="device-name">Front Door</div>
+                <div class="device-type">Smart Lock</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('lock', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <!-- Smart Speaker -->
+              <div class="device-tile" id="device-speaker">
+                <div class="device-icon">🔊</div>
+                <div class="device-name">Speaker</div>
+                <div class="device-type">Vol: <span id="speaker-vol">50</span>%</div>
+                <input type="range" class="device-slider" min="0" max="100" value="50" oninput="setSpeakerVolume(this.value)">
+              </div>
+              <!-- Security Camera -->
+              <div class="device-tile" id="device-camera">
+                <div class="device-icon">📹</div>
+                <div class="device-name">Security Cam</div>
+                <div class="device-type">Camera</div>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked onchange="toggleDevice('camera', this.checked)">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- CARD: ATMOSPHERIC & WEATHER SCANNER -->
-        <div class="hud-card" id="card-environment">
+        <!-- CARD: HOST SYSTEM CONTROL -->
+        <div class="card card-system" id="card-host-control">
           <div class="card-header">
-            <h2>ENVIRONMENTAL SCAN</h2>
+            <h2>🖥️ SYSTEM CONTROL</h2>
             <div class="card-dots"></div>
           </div>
-          <div class="card-body env-body">
-            <div class="env-stats-list">
-              <div class="env-item">
-                <span class="label">ATMOSPHERIC DENSITY</span>
-                <span class="val">1.225 kg/m³</span>
-              </div>
-              <div class="env-item">
-                <span class="label">BAROMETRIC PRESSURE</span>
-                <span class="val">1013.25 hPa</span>
-              </div>
-              <div class="env-item">
-                <span class="label">EXTERNAL RAD levels</span>
-                <span class="val text-cyan">0.08 μSv/h</span>
-              </div>
-              <div class="env-item">
-                <span class="label">DEFENSE SHIELD INTEGRITY</span>
-                <span class="val text-cyan" id="shield-integrity-display">100%</span>
-              </div>
-            </div>
-            
-            <div class="weather-panel">
-              <div class="weather-header">
-                <h3>TARGET SCAN WEATHER</h3>
-                <button class="btn btn-outline btn-small" onclick="fetchWeather()">SCAN ENVIRONMENT</button>
-              </div>
-              <div class="weather-content" id="weather-output">
-                <div class="weather-temp-large" id="weather-temp">72°F</div>
-                <div class="weather-details-group">
-                  <div id="weather-condition" class="text-cyan">MALIBU, CA - CLEAR SCAN</div>
-                  <div>WIND: <span id="weather-wind">8.2 mph NW</span></div>
-                  <div>HUMIDITY: <span id="weather-humidity">45%</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CARD: HOST SYSTEM CONTROL MATRIX -->
-        <div class="hud-card" id="card-host-control">
-          <div class="card-header">
-            <h2>HOST SYSTEM CONTROL</h2>
-            <div class="card-dots"></div>
-          </div>
-          <div class="card-body host-control-body">
-            <div class="system-status-indicator">
-              <span>HOST SERVER LINK:</span>
-              <span id="host-link-status" class="status-badge status-coupled">COUPLED</span>
-            </div>
-            
-            <div class="control-actions-grid">
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('open:notepad')">LAUNCH NOTEPAD</button>
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('open:calc')">LAUNCH CALCULATOR</button>
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('open:browser')">SEARCH ENGINE</button>
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('media:volup')">VOLUME UP</button>
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('media:voldown')">VOLUME DOWN</button>
-              <button class="btn btn-outline btn-small" onclick="triggerHostAction('media:mute')">TOGGLE MUTE</button>
-              <button class="btn btn-outline btn-small text-cyan" onclick="triggerHostAction('sys:screenshot')">SCREENSCAN (PNG)</button>
-              <button class="btn btn-outline btn-small text-danger" onclick="triggerHostAction('sys:lock')">LOCK WORKSTATION</button>
+          <div class="card-body system-body">
+            <div class="system-status-row">
+              <span>Server Link:</span>
+              <span id="host-link-status" class="status-badge status-online">ONLINE</span>
             </div>
 
-            <!-- Native Mobile Controls (Capacitor Webview Only) -->
-            <div id="mobile-controls-panel" class="mobile-only-section hidden">
-              <div class="system-status-indicator" style="margin: 6px 0 4px 0;">
-                <span>MOBILE SYNAPSES:</span>
-                <span class="status-badge status-coupled">ACTIVE</span>
+            <div class="system-status-row" style="margin-top: 6px;">
+              <span>Host IP:</span>
+              <input type="text" id="host-ip-address" placeholder="localhost:2026" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-default); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.58rem; padding: 2px 6px; width: 120px; font-family: 'Share Tech Mono', monospace; text-align: right;" onchange="saveHostIP(this.value)">
+            </div>
+
+            <div class="system-grid">
+              <button class="system-btn" onclick="triggerHostAction('open:notepad')">
+                <span class="sys-icon">📝</span>
+                <span>Notepad</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('open:calc')">
+                <span class="sys-icon">🧮</span>
+                <span>Calculator</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('open:browser')">
+                <span class="sys-icon">🌐</span>
+                <span>Browser</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:volup')">
+                <span class="sys-icon">🔊</span>
+                <span>Vol Up</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:voldown')">
+                <span class="sys-icon">🔉</span>
+                <span>Vol Down</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('media:mute')">
+                <span class="sys-icon">🔇</span>
+                <span>Mute</span>
+              </button>
+              <button class="system-btn" onclick="triggerHostAction('sys:screenshot')">
+                <span class="sys-icon">📸</span>
+                <span>Screenshot</span>
+              </button>
+              <button class="system-btn sys-btn-danger" onclick="triggerHostAction('sys:lock')">
+                <span class="sys-icon">🔐</span>
+                <span>Lock PC</span>
+              </button>
+            </div>
+
+            <!-- Native Mobile Controls (Capacitor only) -->
+            <div id="mobile-controls-panel" class="mobile-section hidden">
+              <div class="system-status-row" style="margin-top: 8px;">
+                <span>Mobile:</span>
+                <span class="status-badge status-online">ACTIVE</span>
               </div>
-              <div class="control-actions-grid">
-                <button class="btn btn-outline btn-small" onclick="triggerMobileAction('haptic')">HAPTIC SHOCK</button>
-                <button class="btn btn-outline btn-small" onclick="triggerMobileAction('torch')">TOGGLE TORCH</button>
-                <button class="btn btn-outline btn-small" onclick="triggerMobileAction('toast')">MOBILE TOAST</button>
-                <button class="btn btn-outline btn-small text-cyan" onclick="triggerMobileAction('specs')">DEVICE DIAG</button>
+              <div class="system-grid">
+                <button class="system-btn" onclick="triggerMobileAction('haptic')">
+                  <span class="sys-icon">📳</span>
+                  <span>Vibrate</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('torch')">
+                  <span class="sys-icon">🔦</span>
+                  <span>Torch</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('toast')">
+                  <span class="sys-icon">💬</span>
+                  <span>Toast</span>
+                </button>
+                <button class="system-btn" onclick="triggerMobileAction('specs')">
+                  <span class="sys-icon">📱</span>
+                  <span>Specs</span>
+                </button>
               </div>
             </div>
 
             <div id="screenshot-display-area" class="screenshot-area hidden" onclick="toggleScreenshotZoom()">
-              <div class="screenshot-header">DESKTOP SCREEN SCAN COPIED:</div>
-              <img id="screenshot-thumbnail" src="" alt="System Scan Image">
+              <div class="screenshot-header">SCREENSHOT CAPTURED:</div>
+              <img id="screenshot-thumbnail" src="" alt="Screenshot">
             </div>
           </div>
         </div>
 
-        <!-- CARD: LOG ARCHIVE & MEMORY CYCLES -->
-        <div class="hud-card" id="card-logs">
+        <!-- CARD: ACTIVITY LOG -->
+        <div class="card card-logs" id="card-logs">
           <div class="card-header">
-            <h2>SECURE MATRIX LOGS</h2>
-            <div class="card-dots"></div>
+            <h2>📋 ACTIVITY LOG</h2>
+            <button class="btn-icon" onclick="clearSecureLogs()" title="Clear logs">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
           </div>
           <div class="card-body logs-body">
             <div class="log-entries" id="secure-log-entries">
               <div class="log-entry sys-msg">
-                <span class="timestamp">[18:58:46]</span>
-                <span class="msg">ATLAS Neural Core System Loaded. Version 4.0.9 active.</span>
+                <span class="timestamp">[--:--:--]</span>
+                <span class="msg">Atlas AI system initialized.</span>
               </div>
-              <div class="log-entry sys-msg">
-                <span class="timestamp">[18:58:47]</span>
-                <span class="msg">Establishing synaptic link with Malibu central cluster...</span>
-              </div>
-              <div class="log-entry ok-msg">
-                <span class="timestamp">[18:58:48]</span>
-                <span class="msg">Core diagnostics state: SECURE. Arc Reactor outlet optimized.</span>
-              </div>
-            </div>
-            <div class="log-actions">
-              <button class="btn btn-outline btn-small" onclick="clearSecureLogs()">FLUSH LOG DATA</button>
-              <button class="btn btn-outline btn-small" onclick="triggerLoreLog()">SYS OVERVIEW</button>
             </div>
           </div>
         </div>
@@ -412,26 +356,6 @@
       </section>
 
     </main>
-
-    <!-- FOOTER: COMMAND TERMINAL CONSOLE -->
-    <footer class="hud-footer">
-      <div class="console-wrapper">
-        <div class="console-header">
-          <div class="console-title">ATLAS COMMAND SHELL (v4.0.9)</div>
-          <div class="console-controls">
-            <span>TERMINAL COUPLING: SECURE</span>
-            <span class="console-status-dot pulsing-green"></span>
-          </div>
-        </div>
-        <div class="console-body" id="console-logs-container">
-          <div class="console-line">Atlas Matrix Operational. Type <span class="cmd-highlight">/help</span> or click buttons above to initialize protocols.</div>
-        </div>
-        <div class="console-input-area">
-          <span class="console-prompt">ATLAS &gt;</span>
-          <input type="text" id="console-input" autofocus placeholder="Transmit cybernetic payload instructions..." autocomplete="off">
-        </div>
-      </div>
-    </footer>
   </div>
 
   <script src="app.js"></script>

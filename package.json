@@ -4,7 +4,8 @@
   "description": "Tactical command AI HUD assistant dashboard (ATLAS)",
   "main": "server.py",
   "scripts": {
-    "start": "python server.py"
+    "start": "python server.py",
+    "build": "powershell -Command \"if (Test-Path www) { Remove-Item -Recurse -Force www }; New-Item -ItemType Directory -Path www -Force; Copy-Item index.html, index.css, app.js, screenshot.png -Destination www\""
   },
   "dependencies": {
     "@capacitor/core": "^6.0.0",

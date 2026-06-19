@@ -1,4 +1,4 @@
-// ATLAS AI HUD - CORE LOGIC ENGINE (v4.0.9)
+// ATLAS AI ASSISTANT & SMART DEVICE CONTROLLER - CORE LOGIC ENGINE
 
 // ----------------------------------------------------
 // 1. SOUND GENERATION SYSTEM (Web Audio API Synthesizer)
@@ -51,20 +51,15 @@ function playHUDsfx(type) {
       }
       case 'success': {
         const osc1 = audioCtx.createOscillator();
-        const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
         osc1.type = 'sine';
         osc1.frequency.setValueAtTime(600, now);
         osc1.frequency.setValueAtTime(900, now + 0.08);
         osc1.frequency.setValueAtTime(1200, now + 0.16);
-        
         gain.gain.setValueAtTime(0.05, now);
         gain.gain.linearRampToValueAtTime(0.005, now + 0.3);
-        
         osc1.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc1.start(now);
         osc1.stop(now + 0.3);
         break;
@@ -75,20 +70,15 @@ function playHUDsfx(type) {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(200, now);
         osc.frequency.exponentialRampToValueAtTime(2000, now + 1.2);
-        
-        // Lowpass filter for sci-fi sweep sound
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(800, now);
         filter.Q.setValueAtTime(10, now);
-
         gain.gain.setValueAtTime(0.03, now);
         gain.gain.linearRampToValueAtTime(0.001, now + 1.2);
-        
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc.start(now);
         osc.stop(now + 1.2);
         break;
@@ -97,22 +87,17 @@ function playHUDsfx(type) {
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        
         osc1.type = 'sawtooth';
         osc2.type = 'sine';
-        
         osc1.frequency.setValueAtTime(180, now);
         osc1.frequency.linearRampToValueAtTime(150, now + 0.5);
         osc2.frequency.setValueAtTime(183, now);
         osc2.frequency.linearRampToValueAtTime(153, now + 0.5);
-        
         gain.gain.setValueAtTime(0.12, now);
         gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
-        
         osc1.connect(gain);
         osc2.connect(gain);
         gain.connect(audioCtx.destination);
-        
         osc1.start(now);
         osc2.start(now);
         osc1.stop(now + 0.5);
@@ -120,7 +105,6 @@ function playHUDsfx(type) {
         break;
       }
       case 'hum': {
-        // Subtle computer hum
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
@@ -129,7 +113,6 @@ function playHUDsfx(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start(now);
-        // Returns the oscillator so we can stop it later
         return osc;
       }
     }
@@ -139,35 +122,25 @@ function playHUDsfx(type) {
 }
 
 // ----------------------------------------------------
-// 2. STATE MANAGEMENT & WIDGET CONFIGURATION
+// 2. STATE MANAGEMENT
 // ----------------------------------------------------
 const state = {
-  activeProtocol: 'STANDBY',
   uptime: 252, // initial uptime in seconds
   cpu: 24,
   mem: 48,
   net: 12,
-  coreTemp: 42,
-  coreMode: 'safe', // safe, overdrive, critical
-  shieldIntegrity: 100,
-  activeModules: {
-    weapons: true,
-    navigation: true,
-    environment: true,
-    holography: true
-  },
-  selectedArmorPart: 'helmet',
-  armorStatus: {
-    helmet: { name: 'NANO-COMPASS TACTICAL MASK', integrity: 100, status: 'OPTIMAL', weapon: 'HUD TARGET LOCK' },
-    chest: { name: 'MARK VIII ARC REACTOR CASING', integrity: 100, status: 'OPTIMAL', weapon: 'UNIBEAM CANNON' },
-    'left-arm': { name: 'LEFT VIBRANIUM repulsor SLEEVE', integrity: 100, status: 'OPTIMAL', weapon: 'REPULSOR RAY' },
-    'right-arm': { name: 'RIGHT VIBRANIUM repulsor SLEEVE', integrity: 100, status: 'OPTIMAL', weapon: 'REPULSOR RAY / MISSILE' },
-    'left-leg': { name: 'LEFT REINFORCED FLIGHT STABILIZER', integrity: 100, status: 'OPTIMAL', weapon: 'THRUSTER STABILIZER' },
-    'right-leg': { name: 'RIGHT REINFORCED FLIGHT STABILIZER', integrity: 100, status: 'OPTIMAL', weapon: 'THRUSTER STABILIZER' }
-  },
   isListening: false,
   isSpeaking: false,
-  weatherQuery: 'Malibu, CA'
+  weatherQuery: 'Malibu, CA',
+  hostIP: localStorage.getItem('atlas_host_ip') || 'localhost:2026',
+  devices: {
+    'living-light': { name: 'Living Room Light', isOn: true },
+    'bedroom-light': { name: 'Bedroom Light', isOn: false },
+    'thermostat': { name: 'Thermostat', value: 72 },
+    'lock': { name: 'Front Door Lock', isOn: true },
+    'speaker': { name: 'Smart Speaker', value: 50 },
+    'camera': { name: 'Security Camera', isOn: true }
+  }
 };
 
 // ----------------------------------------------------
@@ -186,19 +159,20 @@ if (SpeechRecognition) {
   recognition.onstart = () => {
     state.isListening = true;
     updateMicUI();
-    writeConsoleLine('Synaptic audio receptor active. Awaiting voice telemetry...', 'cmd-highlight');
+    writeLogEntry('Auditory sensor receptor active. Listening...', 'sys-msg');
   };
 
   recognition.onresult = (event) => {
     const speechToText = event.results[0][0].transcript;
-    document.getElementById('voice-caption-output').innerText = `"${speechToText}"`;
-    writeConsoleLine(`Voice Payload: "${speechToText}"`, 'cmd-highlight');
+    const voiceCaption = document.getElementById('voice-caption-output');
+    if (voiceCaption) voiceCaption.innerText = `"${speechToText}"`;
+    addChatMessage('user', speechToText);
     processInputDirective(speechToText);
   };
 
   recognition.onerror = (event) => {
     console.error('Speech recognition error', event);
-    writeConsoleLine(`Receptor malfunction: ${event.error}`, 'cmd-error');
+    writeLogEntry(`Voice receptor error: ${event.error}`, 'err-msg');
     state.isListening = false;
     updateMicUI();
   };
@@ -213,22 +187,17 @@ if (SpeechRecognition) {
 
 function speakAsAtlas(text) {
   if ('speechSynthesis' in window) {
-    // Cancel any current speaking
     window.speechSynthesis.cancel();
-
     synthesisUtterance = new SpeechSynthesisUtterance(text);
-    
-    // Choose appropriate voice
     const voices = window.speechSynthesis.getVoices();
-    // Prefer English male voice if possible to match Jarvis style
     let voice = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
     if (!voice) {
       voice = voices.find(v => v.lang.startsWith('en'));
     }
     if (voice) synthesisUtterance.voice = voice;
 
-    synthesisUtterance.rate = 1.05; // Slightly rapid, smart tone
-    synthesisUtterance.pitch = 0.95; // Deep resonance
+    synthesisUtterance.rate = 1.05;
+    synthesisUtterance.pitch = 0.95;
 
     synthesisUtterance.onstart = () => {
       state.isSpeaking = true;
@@ -246,22 +215,212 @@ function speakAsAtlas(text) {
     };
 
     window.speechSynthesis.speak(synthesisUtterance);
-  } else {
-    // Fallback if no TTS
-    console.warn('Speech Synthesis not supported.');
   }
 
-  // Display Atlas's response caption
-  document.getElementById('voice-caption-output').innerText = `"Atlas: ${text}"`;
-  writeConsoleLine(`Atlas: ${text}`);
+  const voiceCaption = document.getElementById('voice-caption-output');
+  if (voiceCaption) voiceCaption.innerText = `"${text}"`;
+  addChatMessage('atlas', text);
+}
+
+function getHostUrl(path) {
+  const host = state.hostIP || 'localhost:2026';
+  if (host.startsWith('http://') || host.startsWith('https://')) {
+    return `${host}${path}`;
+  }
+  return `http://${host}${path}`;
+}
+
+function saveHostIP(val) {
+  let cleaned = val.trim();
+  if (!cleaned) cleaned = 'localhost:2026';
+  state.hostIP = cleaned;
+  localStorage.setItem('atlas_host_ip', cleaned);
+  writeLogEntry(`Host server target updated to: ${cleaned}`, 'sys-msg');
+  
+  // Update input field just in case
+  const ipInput = document.getElementById('host-ip-address');
+  if (ipInput) ipInput.value = cleaned;
+  
+  // Trigger immediate poll
+  if (typeof pollStats === 'function') {
+    pollStats();
+  }
 }
 
 // ----------------------------------------------------
-// 4. COMMAND TELEMETRY PROCESSING (Direct Console / Voice)
+// 4. DEVICE MANAGEMENT FUNCTIONS
+// ----------------------------------------------------
+function toggleDevice(id, isOn) {
+  if (!state.devices[id]) return;
+  state.devices[id].isOn = isOn;
+
+  const tile = document.getElementById(`device-${id}`);
+  if (tile) {
+    if (isOn) {
+      tile.classList.remove('device-off');
+    } else {
+      tile.classList.add('device-off');
+    }
+  }
+
+  // Update checkmark input state if needed to prevent infinite trigger loops
+  const toggleInput = document.querySelector(`#device-${id} input[type="checkbox"]`);
+  if (toggleInput && toggleInput.checked !== isOn) {
+    toggleInput.checked = isOn;
+  }
+
+  playHUDsfx('click');
+  writeLogEntry(`${state.devices[id].name} state changed: ${isOn ? 'ON' : 'OFF'}`, isOn ? 'ok-msg' : 'warn-msg');
+  speakAsAtlas(`${state.devices[id].name} is now ${isOn ? 'on' : 'off'}.`);
+}
+
+let thermostatSpeechTimeout = null;
+function setThermostat(val) {
+  if (!state.devices['thermostat']) return;
+  const numVal = parseInt(val);
+  state.devices['thermostat'].value = numVal;
+  
+  const display = document.getElementById('thermostat-val');
+  if (display) display.innerText = numVal;
+
+  const slider = document.querySelector('#device-thermostat input[type="range"]');
+  if (slider && slider.value != numVal) {
+    slider.value = numVal;
+  }
+
+  playHUDsfx('keypress');
+
+  clearTimeout(thermostatSpeechTimeout);
+  thermostatSpeechTimeout = setTimeout(() => {
+    writeLogEntry(`Thermostat adjusted to ${numVal}°F.`, 'ok-msg');
+    speakAsAtlas(`Adjusting the thermostat temperature to ${numVal} degrees.`);
+  }, 600);
+}
+
+let speakerSpeechTimeout = null;
+function setSpeakerVolume(val) {
+  if (!state.devices['speaker']) return;
+  const numVal = parseInt(val);
+  state.devices['speaker'].value = numVal;
+
+  const display = document.getElementById('speaker-vol');
+  if (display) display.innerText = numVal;
+
+  const slider = document.querySelector('#device-speaker input[type="range"]');
+  if (slider && slider.value != numVal) {
+    slider.value = numVal;
+  }
+
+  playHUDsfx('keypress');
+
+  clearTimeout(speakerSpeechTimeout);
+  speakerSpeechTimeout = setTimeout(() => {
+    writeLogEntry(`Speaker volume changed to ${numVal}%.`, 'ok-msg');
+    speakAsAtlas(`Setting smart speaker volume to ${numVal} percent.`);
+  }, 600);
+}
+
+function updateDeviceCheckbox(id, checked) {
+  if (state.devices[id] && state.devices[id].hasOwnProperty('isOn')) {
+    toggleDevice(id, checked);
+  }
+}
+
+// Helper to set greeting time dynamically
+function initGreetingTime() {
+  const d = new Date();
+  const pad = (v) => String(v).padStart(2, '0');
+  const greetingTime = document.getElementById('greeting-time');
+  if (greetingTime) {
+    greetingTime.innerText = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+}
+
+// ----------------------------------------------------
+// 5. CHAT & MESSAGE HISTORY
+// ----------------------------------------------------
+function sendChatMessage() {
+  const inputEl = document.getElementById('chat-input');
+  if (!inputEl) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  addChatMessage('user', text);
+  inputEl.value = '';
+  playHUDsfx('click');
+
+  // Process command
+  processInputDirective(text);
+}
+
+function addChatMessage(sender, text) {
+  const chatHistory = document.getElementById('chat-history');
+  if (!chatHistory) return;
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `chat-msg ${sender}-msg`;
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = 'msg-avatar';
+  avatarDiv.innerText = sender === 'user' ? 'U' : 'A';
+
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = 'msg-bubble';
+
+  const nameDiv = document.createElement('div');
+  nameDiv.className = 'msg-name';
+  nameDiv.innerText = sender === 'user' ? 'User' : 'Atlas';
+
+  const textDiv = document.createElement('div');
+  textDiv.className = 'msg-text';
+  textDiv.innerHTML = text; // supports HTML markup for lists, styles, etc.
+
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'msg-time';
+  const d = new Date();
+  const pad = (v) => String(v).padStart(2, '0');
+  timeDiv.innerText = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  bubbleDiv.appendChild(nameDiv);
+  bubbleDiv.appendChild(textDiv);
+  bubbleDiv.appendChild(timeDiv);
+
+  msgDiv.appendChild(avatarDiv);
+  msgDiv.appendChild(bubbleDiv);
+
+  chatHistory.appendChild(msgDiv);
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function clearChatHistory() {
+  const chatHistory = document.getElementById('chat-history');
+  if (chatHistory) {
+    chatHistory.innerHTML = `
+      <div class="chat-msg atlas-msg">
+        <div class="msg-avatar">A</div>
+        <div class="msg-bubble">
+          <div class="msg-name">Atlas</div>
+          <div class="msg-text">Chat logs flushed. I'm online and ready for input parameters.</div>
+          <div class="msg-time">${new Date().getHours().toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}</div>
+        </div>
+      </div>
+    `;
+  }
+  playHUDsfx('click');
+  writeLogEntry("Chat logs cleared manually.", "sys-msg");
+}
+
+// ----------------------------------------------------
+// 6. COMMAND TELEMETRY PROCESSING (Q&A & Direct Directives)
 // ----------------------------------------------------
 function processInputDirective(input) {
   const clean = input.trim().toLowerCase();
-  
+  const d = new Date();
+  const pad = (v) => String(v).padStart(2, '0');
+  const clockText = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const dateText = `${pad(d.getDate())}.${months[d.getMonth()]}.${d.getFullYear()}`;
+
   if (clean.startsWith('/') || clean.startsWith('atlas')) {
     // Normalize command prefix
     let cmd = clean;
@@ -277,57 +436,88 @@ function processInputDirective(input) {
     writeLogEntry(`Executing directive: ${primary}`, 'sys-msg');
 
     switch (primary) {
-      case '/help':
-        speakAsAtlas("Commands registered: help, status, diagnose, power, shield, weather, activate, deactivate, notepad, calc, screenshot, lock, volume, torch, vibrate, toast, specs, clear.");
-        writeConsoleLine("Available commands:");
-        writeConsoleLine("  <span class='cmd-highlight'>/status</span> - Request full dashboard metrics review.");
-        writeConsoleLine("  <span class='cmd-highlight'>/diagnose</span> - Launch general sub-system sweep sequence.");
-        writeConsoleLine("  <span class='cmd-highlight'>/power [stable/overdrive/critical]</span> - Modulate Arc Core outlet.");
-        writeConsoleLine("  <span class='cmd-highlight'>/shield [value]</span> - Adjust defense matrices.");
-        writeConsoleLine("  <span class='cmd-highlight'>/weather [query]</span> - Request weather scanners targeting location.");
-        writeConsoleLine("  <span class='cmd-highlight'>/activate [module]</span> - Toggle system registry module.");
-        writeConsoleLine("  <span class='cmd-highlight'>/notepad</span> - Launch host system Notepad application.");
-        writeConsoleLine("  <span class='cmd-highlight'>/calc</span> - Launch host system Calculator.");
-        writeConsoleLine("  <span class='cmd-highlight'>/screenshot</span> - Trigger and render a desktop screenshot.");
-        writeConsoleLine("  <span class='cmd-highlight'>/lock</span> - Lock the Windows host workstation.");
-        writeConsoleLine("  <span class='cmd-highlight'>/volume [up/down/mute]</span> - Modulate host audio levels.");
-        writeConsoleLine("  <span class='cmd-highlight'>/torch</span> - Toggle mobile device camera flashlight.");
-        writeConsoleLine("  <span class='cmd-highlight'>/vibrate</span> - Trigger native tactile haptic feedback pulse.");
-        writeConsoleLine("  <span class='cmd-highlight'>/toast</span> - Broadcast mobile screen banner notification.");
-        writeConsoleLine("  <span class='cmd-highlight'>/specs</span> - Fetch native hardware device parameters.");
-        writeConsoleLine("  <span class='cmd-highlight'>/clear</span> - Flush visual HUD terminal logs.");
+      case '/help': {
+        const helpHTML = `
+          <strong>Available ATLAS directives:</strong><br>
+          • <code>/help</code> - Render command matrix overview.<br>
+          • <code>/status</code> - Query system dashboard performance metrics.<br>
+          • <code>/devices</code> - Scan and query connected home device metrics.<br>
+          • <code>/toggle [id]</code> - Toggle smart devices (living-light, bedroom-light, lock, camera).<br>
+          • <code>/thermostat [60-85]</code> - Regulate heating & cooling target.<br>
+          • <code>/volume [0-100/up/down/mute]</code> - Regulate computational audio levels.<br>
+          • <code>/diagnose</code> - Trigger standard system sweeps.<br>
+          • <code>/weather [query]</code> - Access atmospheric data files.<br>
+          • <code>/notepad</code> - Open Notepad on host computer.<br>
+          • <code>/calc</code> - Open Calculator on host computer.<br>
+          • <code>/screenshot</code> - Take a desktop screenscan.<br>
+          • <code>/lock</code> - Secure and lock host workstation.<br>
+          • <code>/torch</code> - Toggle camera light source on mobile.<br>
+          • <code>/vibrate</code> - Trigger mobile tactile haptic pulses.<br>
+          • <code>/toast</code> - Render screen banner notification on mobile.<br>
+          • <code>/specs</code> - Retrieve hardware device configuration.<br>
+          • <code>/clear</code> - Flush chat message streams.
+        `;
+        speakAsAtlas("Here are the commands I can execute.");
+        addChatMessage('atlas', helpHTML);
         break;
+      }
 
-      case '/status':
-        speakAsAtlas(`System status nominal. CPU core running at ${state.cpu} percent, temperature stable at ${state.coreTemp} degrees Celsius, Reactor power core running on protocol ${state.coreMode.toUpperCase()}.`);
+      case '/status': {
+        speakAsAtlas(`System status nominal. CPU computational load is at ${state.cpu} percent, memory capacity is at ${state.mem} percent, and the local host link is fully coupled.`);
         break;
+      }
 
-      case '/diagnose':
-        runSubsystemDiagnostics();
+      case '/devices': {
+        const devList = Object.keys(state.devices).map(id => {
+          const dev = state.devices[id];
+          const status = dev.hasOwnProperty('isOn') ? (dev.isOn ? '<span class="text-green">ON</span>' : '<span class="text-danger">OFF</span>') : `<span class="text-cyan">${dev.value}${id === 'thermostat' ? '°F' : '%'}</span>`;
+          return `• <strong>${dev.name}</strong> (<code>${id}</code>): ${status}`;
+        }).join('<br>');
+        speakAsAtlas("Displaying smart home device telemetry logs.");
+        addChatMessage('atlas', `<strong>Connected Device Matrix:</strong><br>${devList}`);
         break;
+      }
 
-      case '/power': {
-        const mode = args[1] ? args[1] : 'stable';
-        if (['stable', 'overdrive', 'critical', 'safe'].includes(mode)) {
-          const finalMode = mode === 'stable' ? 'safe' : mode;
-          const matchingBtn = document.querySelector(`.core-btn.btn-${finalMode === 'safe' ? 'cyan' : finalMode === 'overdrive' ? 'orange' : 'danger'}`);
-          setCoreProtocol(finalMode, matchingBtn);
+      case '/toggle': {
+        const id = args[1];
+        if (id && state.devices[id] && state.devices[id].hasOwnProperty('isOn')) {
+          const newState = !state.devices[id].isOn;
+          toggleDevice(id, newState);
         } else {
-          speakAsAtlas("Invalid core modulation request. Choose stable, overdrive, or critical.");
+          speakAsAtlas("Please specify a valid device ID. Valid options: living-light, bedroom-light, lock, camera.");
         }
         break;
       }
 
-      case '/shield': {
+      case '/thermostat': {
         const val = parseInt(args[1]);
-        if (!isNaN(val) && val >= 0 && val <= 100) {
-          state.shieldIntegrity = val;
-          document.getElementById('shield-integrity-display').innerText = `${val}%`;
-          speakAsAtlas(`Adjusting shields to ${val} percent capacity.`);
-          writeLogEntry(`Shield regulation output set to ${val}%`, 'ok-msg');
+        if (!isNaN(val) && val >= 60 && val <= 85) {
+          setThermostat(val);
         } else {
-          speakAsAtlas("Shield range must be specified between zero and one hundred percent.");
+          speakAsAtlas("Thermostat input must be a numeric value between 60 and 85.");
         }
+        break;
+      }
+
+      case '/volume': {
+        const param = args[1];
+        const val = parseInt(param);
+        if (!isNaN(val) && val >= 0 && val <= 100) {
+          setSpeakerVolume(val);
+        } else if (param === 'up') {
+          triggerHostAction('media:volup');
+        } else if (param === 'down') {
+          triggerHostAction('media:voldown');
+        } else if (param === 'mute') {
+          triggerHostAction('media:mute');
+        } else {
+          speakAsAtlas("Volume target must be a number (0-100) or up/down/mute.");
+        }
+        break;
+      }
+
+      case '/diagnose': {
+        runSubsystemDiagnostics();
         break;
       }
 
@@ -335,34 +525,6 @@ function processInputDirective(input) {
         const q = args.slice(1).join(' ') || 'Malibu';
         state.weatherQuery = q;
         fetchWeather();
-        break;
-      }
-
-      case '/activate': {
-        const mod = args[1];
-        if (state.activeModules.hasOwnProperty(mod)) {
-          state.activeModules[mod] = true;
-          const btn = document.getElementById(`btn-${mod}`);
-          if (btn) btn.classList.add('active');
-          speakAsAtlas(`Registry module ${mod} is now online.`);
-          writeLogEntry(`Module online: ${mod.toUpperCase()}`, 'ok-msg');
-        } else {
-          speakAsAtlas("Requested registry module not found in system manifest.");
-        }
-        break;
-      }
-
-      case '/deactivate': {
-        const mod = args[1];
-        if (state.activeModules.hasOwnProperty(mod)) {
-          state.activeModules[mod] = false;
-          const btn = document.getElementById(`btn-${mod}`);
-          if (btn) btn.classList.remove('active');
-          speakAsAtlas(`Shutting down matrix module ${mod}.`);
-          writeLogEntry(`Module offline: ${mod.toUpperCase()}`, 'warn-msg');
-        } else {
-          speakAsAtlas("Requested registry module not found.");
-        }
         break;
       }
 
@@ -382,15 +544,6 @@ function processInputDirective(input) {
       case '/lock':
         triggerHostAction('sys:lock');
         break;
-
-      case '/volume': {
-        const dir = args[1];
-        if (dir === 'up') triggerHostAction('media:volup');
-        else if (dir === 'down') triggerHostAction('media:voldown');
-        else if (dir === 'mute') triggerHostAction('media:mute');
-        else speakAsAtlas("Volume directive parameter must be specified as up, down, or mute.");
-        break;
-      }
 
       case '/torch':
       case '/flashlight':
@@ -412,133 +565,150 @@ function processInputDirective(input) {
         break;
 
       case '/clear':
-        clearSecureLogs();
-        const logsContainer = document.getElementById('console-logs-container');
-        logsContainer.innerHTML = `<div class="console-line">Atlas Matrix Operational. Type <span class="cmd-highlight">/help</span> for instruction manifest.</div>`;
-        playHUDsfx('click');
+        clearChatHistory();
         break;
 
       default:
-        speakAsAtlas(`Unknown directive ${primary}. Please consult the instruction matrix by typing help.`);
+        speakAsAtlas(`Unknown command: ${primary}. Type /help to view valid parameters.`);
     }
   } else {
-    // Natural language triggers
-    if (clean.includes('who are you') || clean.includes('introduce')) {
-      speakAsAtlas("I am ATLAS, your tactical command and integrated intelligence matrix. Ready for instructions.");
-    } else if (clean.includes('status') || clean.includes('how are you')) {
-      speakAsAtlas(`Current telemetry: Uptime ${formatUptime(state.uptime)}, computational integrity optimized. Reactor Core stability at ${100 - (state.coreMode === 'critical' ? 30 : 0)} percent.`);
-    } else if (clean.includes('diagnose') || clean.includes('diagnostic')) {
-      runSubsystemDiagnostics();
-    } else if (clean.includes('weather') || clean.includes('temperature outside')) {
+    // Natural Language Queries
+    if (clean.includes('who are you') || clean.includes('introduce yourself') || clean.includes('what is your name')) {
+      speakAsAtlas("I am ATLAS, your intelligent AI Assistant and Smart Device Controller. I can regulate smart home tiles, run host telemetry sequences, launch applications, and process conversational queries.");
+    } 
+    else if (clean.includes('status') || clean.includes('how are you') || clean.includes('diagnostics')) {
+      speakAsAtlas(`System metrics are fully optimized. Computational CPU usage at ${state.cpu} percent, RAM capacity at ${state.mem} percent, and server host link is active. Uptime is currently ${formatUptime(state.uptime)}.`);
+    } 
+    else if (clean.includes('time')) {
+      speakAsAtlas(`The current system time is ${clockText}.`);
+    } 
+    else if (clean.includes('date') || clean.includes('today')) {
+      speakAsAtlas(`Today's date is ${dateText}.`);
+    } 
+    else if (clean.includes('joke')) {
+      const jokes = [
+        "Why did the smart speaker go to school? Because it wanted to improve its volume of knowledge!",
+        "How many smart lights does it take to change a light bulb? None, they just update their firmware!",
+        "Why did the thermostat break up with the air conditioning system? They kept having too many heated arguments."
+      ];
+      const selected = jokes[Math.floor(Math.random() * jokes.length)];
+      speakAsAtlas(selected);
+    } 
+    else if (clean.includes('weather') || clean.includes('temperature outside')) {
+      const weatherMatch = clean.match(/weather in\s*([a-zA-Z\s]+)/) || clean.match(/weather for\s*([a-zA-Z\s]+)/);
+      if (weatherMatch) {
+        state.weatherQuery = weatherMatch[1];
+      }
       fetchWeather();
-    } else if (clean.includes('protocol overdrive') || clean.includes('activate overdrive')) {
-      const overdriveBtn = document.querySelector('.btn-orange');
-      setCoreProtocol('overdrive', overdriveBtn);
-    } else if (clean.includes('open notepad') || clean.includes('launch notepad')) {
+    } 
+    // Device intents parsed naturally
+    else if (clean.includes('turn on') || clean.includes('activate') || clean.includes('enable')) {
+      if (clean.includes('living')) {
+        updateDeviceCheckbox('living-light', true);
+      } else if (clean.includes('bedroom')) {
+        updateDeviceCheckbox('bedroom-light', true);
+      } else if (clean.includes('lock') || clean.includes('door')) {
+        updateDeviceCheckbox('lock', true);
+      } else if (clean.includes('camera') || clean.includes('security')) {
+        updateDeviceCheckbox('camera', true);
+      } else {
+        speakAsAtlas("Which device would you like to turn on? You can specify living room light, bedroom light, door lock, or camera.");
+      }
+    } 
+    else if (clean.includes('turn off') || clean.includes('deactivate') || clean.includes('disable') || clean.includes('unlock') || clean.includes('open door')) {
+      if (clean.includes('living')) {
+        updateDeviceCheckbox('living-light', false);
+      } else if (clean.includes('bedroom')) {
+        updateDeviceCheckbox('bedroom-light', false);
+      } else if (clean.includes('lock') || clean.includes('door') || clean.includes('unlock')) {
+        updateDeviceCheckbox('lock', false);
+      } else if (clean.includes('camera') || clean.includes('security')) {
+        updateDeviceCheckbox('camera', false);
+      } else {
+        speakAsAtlas("Which device would you like to turn off? You can specify living room light, bedroom light, door lock, or camera.");
+      }
+    } 
+    // Host triggers parsed naturally
+    else if (clean.includes('open notepad') || clean.includes('launch notepad')) {
       triggerHostAction('open:notepad');
-    } else if (clean.includes('open calculator') || clean.includes('launch calculator')) {
+    } 
+    else if (clean.includes('open calculator') || clean.includes('launch calculator')) {
       triggerHostAction('open:calc');
-    } else if (clean.includes('take screenshot') || clean.includes('capture screen') || clean.includes('screenscan')) {
+    } 
+    else if (clean.includes('open browser') || clean.includes('launch browser')) {
+      triggerHostAction('open:browser');
+    } 
+    else if (clean.includes('take screenshot') || clean.includes('capture screen')) {
       triggerHostAction('sys:screenshot');
-    } else if (clean.includes('lock screen') || clean.includes('lock windows') || clean.includes('lock computer')) {
+    } 
+    else if (clean.includes('lock screen') || clean.includes('lock computer')) {
       triggerHostAction('sys:lock');
-    } else if (clean.includes('toggle torch') || clean.includes('flashlight')) {
+    } 
+    else if (clean.includes('volume up') || clean.includes('louder')) {
+      triggerHostAction('media:volup');
+    } 
+    else if (clean.includes('volume down') || clean.includes('quieter')) {
+      triggerHostAction('media:voldown');
+    } 
+    else if (clean.includes('mute audio')) {
+      triggerHostAction('media:mute');
+    } 
+    // Mobile integrations parsed naturally
+    else if (clean.includes('torch') || clean.includes('flashlight')) {
       triggerMobileAction('torch');
-    } else if (clean.includes('vibrate phone') || clean.includes('trigger vibration') || clean.includes('tactile')) {
+    } 
+    else if (clean.includes('vibrate') || clean.includes('buzz')) {
       triggerMobileAction('haptic');
-    } else if (clean.includes('show specs') || clean.includes('device diagnostic')) {
+    } 
+    else if (clean.includes('specs') || clean.includes('hardware details')) {
       triggerMobileAction('specs');
-    } else if (clean.includes('show toast') || clean.includes('toast notification')) {
-      triggerMobileAction('toast');
-    } else if (clean.includes('weapons offline') || clean.includes('disable weapons')) {
-      toggleSystemModule('weapons');
-    } else if (clean.includes('red alert') || clean.includes('critical warning') || clean.includes('self destruct')) {
+    } 
+    // Basic calculator capability
+    else if (/(?:calculate|compute|solve)?\s*([\d\s+\-*\/().]+)/.test(clean) && /[\d]/.test(clean) && /[+\-*\/]/.test(clean)) {
+      try {
+        const mathMatch = clean.match(/(?:calculate|compute|solve)?\s*([\d\s+\-*\/().]+)/);
+        const expr = mathMatch[1].replace(/[^0-9+\-*\/().\s]/g, '');
+        const result = Function(`"use strict"; return (${expr})`)();
+        speakAsAtlas(`That calculates to ${result}.`);
+      } catch (e) {
+        speakAsAtlas("I wasn't able to process that mathematical expression. Please check your numbers.");
+      }
+    } 
+    else if (clean.includes('red alert') || clean.includes('critical warning') || clean.includes('emergency')) {
       triggerCriticalEmergency();
-    } else {
-      speakAsAtlas(`Received auditory command packet. Transmitting to console shell: "${input}"`);
+    }
+    // Conversational fallback
+    else {
+      speakAsAtlas(`I've received your query: "${input}". Since I am running in local dashboard mode, you can type /help to review specific control commands.`);
     }
   }
 }
 
 // ----------------------------------------------------
-// 5. HUD CORE CONTROLLERS & INTERACTIVE WIDGETS
+// 7. CORE ASSISTANT VISUALS & ACTIONS
 // ----------------------------------------------------
-
-// System Core Pulse
 function triggerCorePulse() {
   playHUDsfx('click');
   const node = document.getElementById('atlas-core-node');
-  node.style.transform = 'scale(1.2)';
-  setTimeout(() => {
-    node.style.transform = '';
-  }, 200);
-
-  speakAsAtlas("Arc core telemetry updated. Core flow remains fully synchronized.");
-  writeLogEntry("Reactor core manually pulsed. Flux densities normal.", "ok-msg");
-}
-
-// Core Protocol Settings
-function setCoreProtocol(mode, buttonElement) {
-  playHUDsfx('click');
-  
-  // Remove active styling on other buttons
-  document.querySelectorAll('.core-btn').forEach(btn => btn.classList.remove('active'));
-  if (buttonElement) buttonElement.classList.add('active');
-
-  const cardCore = document.getElementById('card-atlas-core');
-  cardCore.classList.remove('core-overdrive', 'core-critical');
-
-  const statusDot = document.querySelector('.hud-header .status-dot');
-  statusDot.className = 'status-dot'; // clear
-
-  const systemProtocolDisplay = document.getElementById('system-protocol-display');
-
-  if (mode === 'safe') {
-    state.coreMode = 'safe';
-    state.coreTemp = 42;
-    state.cpu = 24;
-    statusDot.classList.add('pulsing-green');
-    systemProtocolDisplay.innerText = "PROTOCOL: STANDBY";
-    speakAsAtlas("Arc Core regulated to stable mode. Ambient thermal output forty-two degrees.");
-    writeLogEntry("Arc Reactor modulated to Safe State. Thermal stabilization complete.", "ok-msg");
-  } 
-  else if (mode === 'overdrive') {
-    state.coreMode = 'overdrive';
-    state.coreTemp = 68;
-    state.cpu = 72;
-    cardCore.classList.add('core-overdrive');
-    statusDot.classList.add('pulsing-orange');
-    systemProtocolDisplay.innerText = "PROTOCOL: OVERDRIVE";
-    speakAsAtlas("Warning. Core outlet modulated to maximum bandwidth. Temperature rising.");
-    writeLogEntry("Arc Reactor modulated to Overdrive State. Warning: Increased thermal flux.", "warn-msg");
-  } 
-  else if (mode === 'critical') {
-    state.coreMode = 'critical';
-    state.coreTemp = 99;
-    state.cpu = 95;
-    cardCore.classList.add('core-critical');
-    statusDot.classList.add('pulsing-red');
-    systemProtocolDisplay.innerText = "PROTOCOL: CRITICAL THRESHOLD";
-    speakAsAtlas("Alert! Core reactor thermal output exceeding critical tolerance levels. Acknowledgment required.");
-    writeLogEntry("CRITICAL ARC INTRUSION. THERMAL OUTFLOW EXCEEDS MAXIMUM THRESHOLD.", "err-msg");
-    triggerCriticalEmergency();
+  if (node) {
+    node.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      node.style.transform = '';
+    }, 200);
   }
 
-  // Update HUD displays
-  document.getElementById('core-temp-display').innerText = `${state.coreTemp}°C`;
-  document.getElementById('cpu-percent').innerText = `${state.cpu}%`;
-  document.getElementById('cpu-bar').style.width = `${state.cpu}%`;
+  speakAsAtlas("Atlas core database synchronized. All cognitive loops running at optimal latency.");
+  writeLogEntry("AI core manual pulse executed. Synaptic links online.", "ok-msg");
 }
 
-// Sub-System Diagnostic Sequence
 function runSubsystemDiagnostics() {
   playHUDsfx('diagnostic');
   speakAsAtlas("Initializing full matrix sub-system sweep. Diagnostic telemetry mapping active.");
   writeLogEntry("Diagnostic sweep initialized...", "sys-msg");
 
   let progress = 0;
-  const originalProtocol = state.activeProtocol;
-  document.getElementById('system-protocol-display').innerText = "PROTOCOL: DIAGNOSTICS ACTIVE";
+  const sysProtocol = document.getElementById('system-protocol-display');
+  if (sysProtocol) sysProtocol.innerText = "DIAGNOSTICS ACTIVE";
 
   const interval = setInterval(() => {
     progress += 25;
@@ -553,178 +723,62 @@ function runSubsystemDiagnostics() {
       playHUDsfx('success');
       speakAsAtlas("Sub-system sweep complete. All operational nodes reporting normal status matrix.");
       writeLogEntry("Diagnostic sweep complete. Status: OPTIMAL.", "ok-msg");
-      document.getElementById('system-protocol-display').innerText = `PROTOCOL: ${state.coreMode.toUpperCase()}`;
+      if (sysProtocol) sysProtocol.innerText = "ONLINE";
       
-      // Reset diagnostic bars to target values
+      // Reset displays
       document.getElementById('cpu-percent').innerText = `${state.cpu}%`;
-      document.getElementById('cpu-bar').style.width = `${state.cpu}%`;
       document.getElementById('mem-percent').innerText = `${state.mem}%`;
-      document.getElementById('mem-bar').style.width = `${state.mem}%`;
     }
   }, 400);
 }
 
-// Module toggles
-function toggleSystemModule(moduleName) {
-  playHUDsfx('click');
-  const active = !state.activeModules[moduleName];
-  state.activeModules[moduleName] = active;
-  
-  const btn = document.getElementById(`btn-${moduleName}`);
-  if (btn) {
-    if (active) {
-      btn.classList.add('active');
-      btn.innerText = "ONLINE";
-      speakAsAtlas(`${moduleName} module coupled.`);
-      writeLogEntry(`Module decoupled: ${moduleName.toUpperCase()} is ONLINE`, 'ok-msg');
-    } else {
-      btn.classList.remove('active');
-      btn.innerText = "OFFLINE";
-      speakAsAtlas(`Warning. De-coupling ${moduleName} matrix.`);
-      writeLogEntry(`Module offline warning: ${moduleName.toUpperCase()}`, 'warn-msg');
-    }
-  }
-}
-
-// Armor suite section interactions
-function selectArmorPart(part) {
-  playHUDsfx('click');
-  state.selectedArmorPart = part;
-  
-  // Highlight visually in SVG
-  document.querySelectorAll('.armor-part').forEach(p => p.classList.remove('selected'));
-  const targetSvgNode = document.getElementById(`suit-${part}`);
-  if (targetSvgNode) targetSvgNode.classList.add('selected');
-
-  // Load stats
-  const info = state.armorStatus[part];
-  document.getElementById('armor-part-title').innerText = info.name;
-  document.getElementById('armor-plating-val').innerText = `${info.integrity}%`;
-  
-  const statusEl = document.getElementById('armor-thermal-val');
-  statusEl.innerText = info.status;
-  if (info.status === 'OPTIMAL') {
-    statusEl.className = 'value text-cyan';
-  } else {
-    statusEl.className = 'value text-danger';
-  }
-
-  document.getElementById('armor-weapons-val').innerText = info.weapon;
-}
-
-function toggleArmorPart() {
-  playHUDsfx('warning');
-  const part = state.selectedArmorPart;
-  const current = state.armorStatus[part];
-  
-  const targetSvgNode = document.getElementById(`suit-${part}`);
-  
-  if (current.status === 'OPTIMAL') {
-    current.status = 'OFFLINE';
-    current.integrity = 0;
-    if (targetSvgNode) {
-      targetSvgNode.classList.remove('part-active');
-      targetSvgNode.classList.add('part-inactive');
-    }
-    speakAsAtlas(`Warning. Decoupled armor component: ${current.name}.`);
-    writeLogEntry(`Armor suite warning: component ${part.toUpperCase()} offline`, 'warn-msg');
-  } else {
-    current.status = 'OPTIMAL';
-    current.integrity = 100;
-    if (targetSvgNode) {
-      targetSvgNode.classList.remove('part-inactive');
-      targetSvgNode.classList.add('part-active');
-    }
-    speakAsAtlas(`Coupled armor component: ${current.name}. Stabilization complete.`);
-    writeLogEntry(`Armor component ${part.toUpperCase()} re-stabilized.`, 'ok-msg');
-  }
-
-  // Reload pane UI
-  selectArmorPart(part);
-}
-
-function diagnoseArmor() {
-  playHUDsfx('diagnostic');
-  const part = state.selectedArmorPart;
-  const info = state.armorStatus[part];
-  speakAsAtlas(`Calibrating shield vectors and structural integrity for ${info.name}.`);
-  writeLogEntry(`Calibrating armor matrix telemetry for ${part.toUpperCase()}...`, 'sys-msg');
-  
-  setTimeout(() => {
-    playHUDsfx('success');
-    info.integrity = 100;
-    info.status = 'OPTIMAL';
-    const targetSvgNode = document.getElementById(`suit-${part}`);
-    if (targetSvgNode) {
-      targetSvgNode.classList.remove('part-inactive');
-      targetSvgNode.classList.add('part-active');
-    }
-    selectArmorPart(part);
-    speakAsAtlas(`Armor calibration completed. Integrity is stable.`);
-    writeLogEntry(`Armor calibration completed for ${part.toUpperCase()}. Status verified.`, 'ok-msg');
-  }, 1000);
-}
-
-// Weather fetch simulation with high-tech details
+// Weather fetch simulation
 function fetchWeather() {
   playHUDsfx('click');
   const city = state.weatherQuery;
-  speakAsAtlas(`Scanning tropospheric data logs for ${city}.`);
-  writeLogEntry(`Accessing atmospheric database scan for ${city.toUpperCase()}...`, 'sys-msg');
+  speakAsAtlas(`Accessing meteorological forecast tables for ${city}.`);
+  writeLogEntry(`Contacting satellite servers for atmospheric data at ${city.toUpperCase()}...`, 'sys-msg');
   
-  // High-tech weather simulation
   setTimeout(() => {
     let temp = "72°F";
-    let cond = "CLEAR PROTOCOL SCAN";
+    let cond = "Sunny Skies - Calm";
     let wind = "6.4 mph NW";
     let hum = "48%";
     
     const lower = city.toLowerCase();
     if (lower.includes('london')) {
       temp = "14°C";
-      cond = "DRIZZLE OVERLAY SCAN";
+      cond = "Overcast Overlay - Light Drizzle";
       wind = "12.8 mph SW";
       hum = "82%";
     } else if (lower.includes('tokyo')) {
       temp = "22°C";
-      cond = "CLOUDY SCANNERS NORMAL";
+      cond = "Cloudy - Calm";
       wind = "5.1 mph NE";
       hum = "60%";
     } else if (lower.includes('new york')) {
       temp = "68°F";
-      cond = "OVERCAST INTRUSION";
+      cond = "Partly Cloudy";
       wind = "10.0 mph E";
       hum = "55%";
-    } else if (lower.includes('critical') || lower.includes('alert')) {
-      temp = "999°F";
-      cond = "THERMONUCLEAR OUTFLOW DETECTED";
-      wind = "250.0 mph RADIATION STORM";
-      hum = "0%";
+    } else if (lower.includes('critical') || lower.includes('alert') || lower.includes('storm')) {
+      temp = "99°F";
+      cond = "Severe Winds - Meteorological Alert";
+      wind = "85.0 mph Gale";
+      hum = "95%";
     }
 
-    document.getElementById('weather-temp').innerText = temp;
-    document.getElementById('weather-condition').innerText = `${city.toUpperCase()} - ${cond}`;
-    document.getElementById('weather-wind').innerText = wind;
-    document.getElementById('weather-humidity').innerText = hum;
-    
-    playHUDsfx('success');
-    speakAsAtlas(`Scanning complete. Temperature is ${temp}, weather condition is ${cond.toLowerCase()}.`);
-    writeLogEntry(`Weather telemetry updated for ${city.toUpperCase()}.`, 'ok-msg');
+    // Since we don't have separate HUD fields for weather anymore (they are inside Q&A logs), 
+    // let's speak the weather and output it beautifully in the chat
+    speakAsAtlas(`Tropospheric scan complete. Weather in ${city} is currently ${temp} and ${cond.toLowerCase()} with winds at ${wind}.`);
+    writeLogEntry(`Atmospheric metrics loaded for ${city.toUpperCase()}.`, 'ok-msg');
   }, 800);
-}
-
-// Console and secure logs helpers
-function writeConsoleLine(htmlContent, className = '') {
-  const container = document.getElementById('console-logs-container');
-  const line = document.createElement('div');
-  line.className = `console-line ${className}`;
-  line.innerHTML = htmlContent;
-  container.appendChild(line);
-  container.scrollTop = container.scrollHeight;
 }
 
 function writeLogEntry(msg, type = 'sys-msg') {
   const logEntries = document.getElementById('secure-log-entries');
+  if (!logEntries) return;
+
   const entry = document.createElement('div');
   entry.className = `log-entry ${type}`;
   
@@ -737,21 +791,12 @@ function writeLogEntry(msg, type = 'sys-msg') {
 }
 
 function clearSecureLogs() {
-  document.getElementById('secure-log-entries').innerHTML = '';
-}
-
-function triggerLoreLog() {
+  const logEntries = document.getElementById('secure-log-entries');
+  if (logEntries) logEntries.innerHTML = '';
   playHUDsfx('click');
-  speakAsAtlas("Decrypting tactical files. Overview logged to secure matrix.");
-  writeLogEntry("--- DECLASSIFIED TACTICAL FILE OVERVIEW ---", "sys-msg text-cyan");
-  writeLogEntry("PROJECT ATLAS: Mark LXXXV Synaptic Intelligence Interface.", "sys-msg");
-  writeLogEntry("PRIMARY CORE: Stabilized Arc Reactor coupling (Malibu Cluster).", "sys-msg");
-  writeLogEntry("DESIGN SPEC: Cybernetic speech compiler, sub-orbital navigation radar.", "sys-msg");
-  writeLogEntry("DEFENSE MATRIX: Multi-spectrum nano-composite shielding.", "sys-msg");
-  writeLogEntry("STATUS: Ready for orbital or atmospheric deployments.", "ok-msg");
+  writeLogEntry("Activity logs cleared.", "sys-msg");
 }
 
-// Listening status triggers
 function toggleVoiceCommand() {
   if (state.isListening) {
     if (recognition) recognition.stop();
@@ -760,7 +805,7 @@ function toggleVoiceCommand() {
     if (recognition) {
       recognition.start();
     } else {
-      speakAsAtlas("Voice receptor not supported. Please type instructions in the CLI console below.");
+      speakAsAtlas("Voice speech recognition is not supported in this browser. Please type instructions in the chat box.");
     }
   }
 }
@@ -770,46 +815,47 @@ function updateMicUI() {
   const bubble = document.getElementById('mic-status-bubble');
   const text = document.getElementById('mic-status-text');
 
+  if (!btn || !bubble || !text) return;
+
   bubble.className = "listening-status";
   btn.classList.remove('listening');
 
   if (state.isListening) {
     btn.classList.add('listening');
     bubble.classList.add('status-listening');
-    text.innerText = "ATLAS LISTENING MATRIX ACTIVE";
+    text.innerText = "LISTENING";
     playHUDsfx('click');
   } else if (state.isSpeaking) {
     bubble.classList.add('status-speaking');
-    text.innerText = "ATLAS SPEECH CHIRPING";
+    text.innerText = "SPEAKING";
   } else {
-    text.innerText = "ATLAS COMPILER STANDBY";
+    text.innerText = "STANDBY";
   }
 }
 
 // Emergency Overlay
 function triggerCriticalEmergency() {
   playHUDsfx('warning');
-  document.getElementById('alert-overlay').classList.remove('hidden');
+  const overlay = document.getElementById('alert-overlay');
+  const msg = document.getElementById('alert-message');
+  if (overlay) overlay.classList.remove('hidden');
+  if (msg) msg.innerText = "CRITICAL HARDWARE OVERLOAD OR SYSTEM DIRECTIVE INTRUSION DETECTED.";
 }
 
 function dismissAlert() {
   playHUDsfx('click');
-  document.getElementById('alert-overlay').classList.add('hidden');
-  
-  // Return reactor core back to stable
-  const stableBtn = document.querySelector('.btn-cyan');
-  setCoreProtocol('safe', stableBtn);
+  const overlay = document.getElementById('alert-overlay');
+  if (overlay) overlay.classList.add('hidden');
   speakAsAtlas("Emergency status overridden. Core temperature nominal.");
   writeLogEntry("Critical emergency overridden manually. Reactor stabilization active.", "ok-msg");
 }
 
 // ----------------------------------------------------
-// 6. VISUAL RENDERING ENGINES (HTML5 Canvas Animations)
+// 8. VISUAL RENDERING ENGINES (HTML5 Canvas Animations)
 // ----------------------------------------------------
-
-// Canvas Voice Visualizer
 function initVoiceVisualizer() {
   const canvas = document.getElementById('voice-visualizer');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   
   function resizeCanvas() {
@@ -831,36 +877,34 @@ function initVoiceVisualizer() {
 
     ctx.lineWidth = 2;
     
-    // Draw grid background lines in visualizer
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+    ctx.strokeStyle = 'rgba(129, 140, 248, 0.08)';
     ctx.beginPath();
     ctx.moveTo(0, centerY);
     ctx.lineTo(width, centerY);
     ctx.stroke();
 
-    // Determine visualizer state amplitudes
     let linesCount = 3;
     let amplitude = 6;
     let frequency = 0.02;
     let speed = 0.08;
-    let strokeColor = 'rgba(0, 240, 255, 0.5)';
+    let strokeColor = 'rgba(34, 211, 238, 0.5)'; // cyan
     
     if (state.isSpeaking) {
       amplitude = 22;
       speed = 0.25;
       frequency = 0.04;
       linesCount = 5;
-      strokeColor = 'rgba(0, 240, 255, 0.8)';
+      strokeColor = 'rgba(129, 140, 248, 0.8)'; // accent
       ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+      ctx.shadowColor = 'rgba(129, 140, 248, 0.7)';
     } else if (state.isListening) {
       amplitude = 15;
       speed = 0.18;
       frequency = 0.09;
       linesCount = 4;
-      strokeColor = 'rgba(255, 0, 85, 0.7)';
+      strokeColor = 'rgba(248, 113, 113, 0.7)'; // red
       ctx.shadowBlur = 10;
-      ctx.shadowColor = 'rgba(255, 0, 85, 0.7)';
+      ctx.shadowColor = 'rgba(248, 113, 113, 0.7)';
     } else {
       ctx.shadowBlur = 0;
     }
@@ -872,7 +916,6 @@ function initVoiceVisualizer() {
       const linePhase = phase + (i * Math.PI / 4);
       
       for (let x = 0; x < width; x++) {
-        // Apply envelope so wave fades at edges
         const envelope = Math.sin((x / width) * Math.PI);
         const y = centerY + Math.sin(x * frequency + linePhase) * amplitude * envelope * (1 - (i * 0.2));
         if (x === 0) {
@@ -884,9 +927,7 @@ function initVoiceVisualizer() {
       ctx.stroke();
     }
     
-    // Reset shadow blur
     ctx.shadowBlur = 0;
-
     phase += speed;
     requestAnimationFrame(draw);
   }
@@ -894,97 +935,8 @@ function initVoiceVisualizer() {
   draw();
 }
 
-// Canvas Orbital Radar scanner
-function initRadarMap() {
-  const canvas = document.getElementById('radar-canvas');
-  const ctx = canvas.getContext('2d');
-  
-  let radarAngle = 0;
-  const blips = [
-    { x: 140, y: 80, size: 4, label: 'MALIBU MATRIX', pulse: 0 },
-    { x: 80, y: 120, size: 3, label: 'ORBITAL-3', pulse: 1 },
-    { x: 200, y: 50, size: 2, label: 'DEF MATRIX UNVEIL', pulse: 2 }
-  ];
-
-  function drawRadar() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const maxRadius = Math.min(cx, cy) - 10;
-
-    // Draw grid circle overlays
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
-    ctx.lineWidth = 1;
-    
-    // Draw concentric circles
-    for (let r = 20; r <= maxRadius; r += 25) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // Draw grid crosshairs
-    ctx.beginPath();
-    ctx.moveTo(cx - maxRadius, cy);
-    ctx.lineTo(cx + maxRadius, cy);
-    ctx.moveTo(cx, cy - maxRadius);
-    ctx.lineTo(cx, cy + maxRadius);
-    ctx.stroke();
-
-    // Draw Sweep scanner line
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    const endX = cx + Math.cos(radarAngle) * maxRadius;
-    const endY = cy + Math.sin(radarAngle) * maxRadius;
-    ctx.lineTo(endX, endY);
-    ctx.stroke();
-
-    // Draw sweep gradient trail
-    ctx.fillStyle = 'rgba(0, 240, 255, 0.03)';
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, maxRadius, radarAngle - 0.25, radarAngle);
-    ctx.fill();
-
-    // Draw targets (blips)
-    blips.forEach(blip => {
-      // Draw blip core
-      ctx.fillStyle = 'var(--cyan)';
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = 'var(--cyan)';
-      ctx.beginPath();
-      ctx.arc(blip.x, blip.y, blip.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-
-      // Draw pulse ring around blip
-      blip.pulse += 0.05;
-      if (blip.pulse > 8) blip.pulse = 0;
-      
-      ctx.strokeStyle = `rgba(0, 240, 255, ${1 - (blip.pulse / 8)})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(blip.x, blip.y, blip.size + blip.pulse, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Render mini labels
-      ctx.fillStyle = 'var(--text-muted)';
-      ctx.font = '6px "Share Tech Mono"';
-      ctx.fillText(blip.label, blip.x + 8, blip.y + 2);
-    });
-
-    radarAngle += 0.015;
-    requestAnimationFrame(drawRadar);
-  }
-
-  drawRadar();
-}
-
 // ----------------------------------------------------
-// 7. BOOTSTRAP INITIALIZATION
+// 9. BOOTSTRAP INITIALIZATION
 // ----------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   // Setup clock & date HUD indicators
@@ -993,121 +945,135 @@ document.addEventListener('DOMContentLoaded', () => {
     const pad = (v) => String(v).padStart(2, '0');
     
     // Header clock
-    const clockText = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} UTC`;
-    document.getElementById('hud-clock').innerText = clockText;
+    const clockText = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const clockEl = document.getElementById('hud-clock');
+    if (clockEl) clockEl.innerText = clockText;
     
     // Header date
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     const dateText = `${pad(d.getDate())}.${months[d.getMonth()]}.${d.getFullYear()}`;
-    document.getElementById('hud-date').innerText = dateText;
+    const dateEl = document.getElementById('hud-date');
+    if (dateEl) dateEl.innerText = dateText;
 
     // Increment simulated uptime
     state.uptime++;
-    document.getElementById('uptime-display').innerText = formatUptime(state.uptime);
+    const uptimeEl = document.getElementById('uptime-display');
+    if (uptimeEl) uptimeEl.innerText = formatUptime(state.uptime);
 
     // Read actual system metrics from backend API
-    fetch('/api/stats')
+    fetch(getHostUrl('/api/stats'))
       .then(res => res.json())
       .then(data => {
         // Link statuses
         const linkBadge = document.getElementById('host-link-status');
-        linkBadge.className = 'status-badge status-coupled';
-        linkBadge.innerText = 'COUPLED';
+        if (linkBadge) {
+          linkBadge.className = 'status-badge status-online';
+          linkBadge.innerText = 'ONLINE';
+        }
         
         // Update stats
         state.cpu = data.cpu;
         state.mem = data.mem;
         state.net = data.disk;
         
-        if (state.coreMode !== 'critical') {
-          document.getElementById('cpu-percent').innerText = `${data.cpu}%`;
-          document.getElementById('cpu-bar').style.width = `${data.cpu}%`;
-          
-          document.getElementById('mem-percent').innerText = `${data.mem}%`;
-          document.getElementById('mem-bar').style.width = `${data.mem}%`;
-          
-          document.getElementById('net-percent').innerText = `${data.disk}%`;
-          document.getElementById('net-bar').style.width = `${data.disk}%`;
-        }
+        const cpuVal = document.getElementById('cpu-percent');
+        if (cpuVal) cpuVal.innerText = `${data.cpu}%`;
+        
+        const memVal = document.getElementById('mem-percent');
+        if (memVal) memVal.innerText = `${data.mem}%`;
+        
+        const netVal = document.getElementById('net-percent');
+        if (netVal) netVal.innerText = `${data.disk}%`;
       })
       .catch(err => {
-        // Link server is down or static hosting
         const linkBadge = document.getElementById('host-link-status');
         if (linkBadge) {
-          linkBadge.className = 'status-badge status-uncoupled';
-          linkBadge.innerText = 'UNCOUPLED';
+          linkBadge.className = 'status-badge status-offline';
+          linkBadge.innerText = 'OFFLINE';
         }
         
         // Fallback simulate stats when backend server isn't running
-        if (state.coreMode !== 'critical') {
-          const targetCpu = state.coreMode === 'overdrive' ? 72 : 24;
-          const fluxCpu = Math.max(5, Math.min(100, Math.round(targetCpu + (Math.random() * 8 - 4))));
-          const fluxMem = Math.max(10, Math.min(100, Math.round(state.mem + (Math.random() * 4 - 2))));
-          const fluxNet = Math.max(5, Math.min(100, Math.round(state.net + (Math.random() * 6 - 3))));
+        const targetCpu = 24;
+        const fluxCpu = Math.max(5, Math.min(100, Math.round(targetCpu + (Math.random() * 8 - 4))));
+        const fluxMem = Math.max(10, Math.min(100, Math.round(state.mem + (Math.random() * 4 - 2))));
+        const fluxNet = Math.max(5, Math.min(100, Math.round(state.net + (Math.random() * 6 - 3))));
 
-          document.getElementById('cpu-percent').innerText = `${fluxCpu}%`;
-          document.getElementById('cpu-bar').style.width = `${fluxCpu}%`;
-          
-          document.getElementById('mem-percent').innerText = `${fluxMem}%`;
-          document.getElementById('mem-bar').style.width = `${fluxMem}%`;
-          
-          document.getElementById('net-percent').innerText = `${fluxNet}%`;
-          document.getElementById('net-bar').style.width = `${fluxNet}%`;
-        }
+        const cpuVal = document.getElementById('cpu-percent');
+        if (cpuVal) cpuVal.innerText = `${fluxCpu}%`;
+        
+        const memVal = document.getElementById('mem-percent');
+        if (memVal) memVal.innerText = `${fluxMem}%`;
+        
+        const netVal = document.getElementById('net-percent');
+        if (netVal) netVal.innerText = `${fluxNet}%`;
       });
   }, 1000);
 
-  // Terminal enter listener
-  const inputElement = document.getElementById('console-input');
-  inputElement.addEventListener('keydown', (e) => {
-    playHUDsfx('keypress');
-    
-    if (e.key === 'Enter') {
-      const query = inputElement.value;
-      if (query.trim() !== '') {
-        writeConsoleLine(`<span class="console-prompt">ATLAS &gt;</span> ${query}`);
-        processInputDirective(query);
-        inputElement.value = '';
+  // Initialize greeting time stamp
+  initGreetingTime();
+
+  // Initialize Host IP input field from saved state
+  const ipInput = document.getElementById('host-ip-address');
+  if (ipInput) ipInput.value = state.hostIP;
+
+  // Chat input enter listener
+  const inputElement = document.getElementById('chat-input');
+  if (inputElement) {
+    inputElement.addEventListener('keydown', (e) => {
+      playHUDsfx('keypress');
+      if (e.key === 'Enter') {
+        sendChatMessage();
+      }
+    });
+  }
+
+  // Set initial visual states for device toggles/sliders
+  Object.keys(state.devices).forEach(id => {
+    const dev = state.devices[id];
+    const tile = document.getElementById(`device-${id}`);
+    if (tile) {
+      if (dev.hasOwnProperty('isOn')) {
+        const inputCheck = tile.querySelector('input[type="checkbox"]');
+        if (inputCheck) inputCheck.checked = dev.isOn;
+        if (dev.isOn === false) {
+          tile.classList.add('device-off');
+        } else {
+          tile.classList.remove('device-off');
+        }
+      } else {
+        const inputSlider = tile.querySelector('input[type="range"]');
+        if (inputSlider) inputSlider.value = dev.value;
+        const valSpan = tile.querySelector('span');
+        if (valSpan) valSpan.innerText = dev.value;
       }
     }
   });
 
-  // Select first armor part (Helmet) on load
-  selectArmorPart('helmet');
-
-  // Trigger visual visualizer loop & radars
+  // Trigger visual visualizer loop
   initVoiceVisualizer();
-  initRadarMap();
 
   // Check and initialize Capacitor Mobile layouts
   if (typeof window.Capacitor !== 'undefined') {
     const mobPanel = document.getElementById('mobile-controls-panel');
     if (mobPanel) mobPanel.classList.remove('hidden');
-    
-    // Poll battery immediately
-    const plugins = window.Capacitor.Plugins;
-    if (plugins.Device) {
-      plugins.Device.getBatteryInfo().then(info => {
-        const batteryPercent = Math.round(info.batteryLevel * 100);
-        const sourceDisplay = document.getElementById('energy-source-display');
-        if (sourceDisplay) sourceDisplay.innerText = `MOBILE BATTERY - ${batteryPercent}%`;
-      });
-    }
     writeLogEntry("Capacitor core coupled. Native mobile bridges loaded.", "ok-msg");
   }
 
   // Greeting speech delay to let user load screen
   setTimeout(() => {
-    speakAsAtlas("ATLAS online. Matrix networks coupled successfully.");
-    writeLogEntry("ATLAS Tactical Shell online. Awaiting directive parameters.", "ok-msg");
+    speakAsAtlas("Atlas online. Virtual assistant matrix and smart home systems coupled successfully.");
+    writeLogEntry("ATLAS Intelligence Core online. Ready for Q&A or device control parameters.", "ok-msg");
   }, 1200);
 });
 
+// ----------------------------------------------------
+// 10. HOST CONTROL API PIPELINES
+// ----------------------------------------------------
 function triggerHostAction(action) {
   playHUDsfx('click');
   writeLogEntry(`Transmitting host control action: ${action.toUpperCase()}`, 'sys-msg');
   
-  fetch(`/api/control?action=${action}`)
+  fetch(getHostUrl(`/api/control?action=${action}`))
     .then(res => res.json())
     .then(data => {
       if (data.success) {
@@ -1119,9 +1085,10 @@ function triggerHostAction(action) {
         if (action === 'sys:screenshot' && data.imageUrl) {
           const area = document.getElementById('screenshot-display-area');
           const thumb = document.getElementById('screenshot-thumbnail');
-          // Cache bust URL to reload the image
-          thumb.src = data.imageUrl + '?t=' + Date.now();
-          area.classList.remove('hidden');
+          if (thumb && area) {
+            thumb.src = getHostUrl('/' + data.imageUrl) + '?t=' + Date.now();
+            area.classList.remove('hidden');
+          }
         }
       } else {
         playHUDsfx('warning');
@@ -1132,11 +1099,14 @@ function triggerHostAction(action) {
     .catch(err => {
       playHUDsfx('warning');
       speakAsAtlas("Failed to communicate with local host system controller.");
-      writeLogEntry(`Host connection error. Check server.py status.`, 'err-msg');
+      writeLogEntry(`Host connection error. Check if server.py is running.`, 'err-msg');
     });
 }
 
-let torchTrack = null; // WebRTC camera track fallback for light source
+// ----------------------------------------------------
+// 11. NATIVE MOBILE CONTROLS & WEB FALLBACKS
+// ----------------------------------------------------
+let torchTrack = null;
 
 function triggerMobileAction(action) {
   playHUDsfx('click');
@@ -1212,7 +1182,6 @@ function toggleFlashlight() {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
           const track = stream.getVideoTracks()[0];
-          // Check for torch capability
           const capabilities = track.getCapabilities();
           if (capabilities.torch) {
             track.applyConstraints({ advanced: [{ torch: true }] })
@@ -1240,10 +1209,12 @@ function toggleFlashlight() {
 function toggleScreenshotZoom() {
   playHUDsfx('click');
   const thumb = document.getElementById('screenshot-thumbnail');
-  if (thumb.style.maxHeight === 'none') {
-    thumb.style.maxHeight = '120px';
-  } else {
-    thumb.style.maxHeight = 'none';
+  if (thumb) {
+    if (thumb.style.maxHeight === 'none') {
+      thumb.style.maxHeight = '120px';
+    } else {
+      thumb.style.maxHeight = 'none';
+    }
   }
 }
 
